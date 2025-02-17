@@ -232,7 +232,7 @@ function shadedFCBarDatasets(
       label: "", // hide individual legend entry
       group: groupLabel, // assign to the group
       data,
-      backgroundColor: `rgba(0, 0, 255, ${opacity})`,
+      backgroundColor:`rgb(208, 105, 20, ${opacity})`,
       borderColor: "rgba(0,0,0,0)",
       yAxisID: "y2",
       // Force all bars into the same stack so that they overlap:
@@ -258,8 +258,6 @@ function shadedFCBarDatasets(
 
   return [legendDataset, ...datasets];
 }
-
-
 
 export function CombinedBarLineForecastAndHistChart_2({
   title,
@@ -296,13 +294,19 @@ export function CombinedBarLineForecastAndHistChart_2({
   // Calculate axis ranges
   const maxAbsValue_si = Math.max(
     Math.abs(Math.min(...barData, 0)),
-    Math.abs(Math.max(...barData, 0))
+    Math.abs(Math.max(...barData, 0)),
+    Math.abs(Math.min(...shadedData1.flat(), 0)),
+    Math.abs(Math.max(...shadedData1.flat(), 0))
   );
   const maxAbsValue_price = Math.max(
     Math.abs(Math.min(...lineData, 0)),
-    Math.abs(Math.max(...lineData, 0))
-  );
+    Math.abs(Math.max(...lineData, 0)),
+    Math.abs(Math.min(...lineDataFc, 0)),
+    Math.abs(Math.max(...lineDataFc, 0)),
+    );
 
+
+  
   const datasetsHist = [
     {
       type: "line",
@@ -329,14 +333,9 @@ export function CombinedBarLineForecastAndHistChart_2({
       yAxisID: "y2",
     },
   ];
+  // console.log(lineDataFc)
 
-  // // Generate the shaded forecast datasets (with grouping)
-  // const shadedForecastchartDatasets = shadedFCDatasets(
-  //   quantiles,
-  //   shadedData1,
-  //   lineData.length
-  // );
-
+  // console.log(new Array(lineData.length).fill(null).concat(lineDataFc))
   const shadedForecastchartDatasets = shadedFCBarDatasets(
     quantiles,
     shadedData1,
@@ -402,6 +401,130 @@ export function CombinedBarLineForecastAndHistChart_2({
           }
           chart.update();
         }
+      },
+    },
+  };
+
+  return (
+    <div className="mt-8">
+      <h2 className="text-lg font-bold">{title}</h2>
+      <Chart type="bar" data={chartData} options={options} />
+    </div>
+  );
+}
+
+export function CombinedBarLineForecastAndHistChartOperational({
+  title,
+  x_labels,
+  x_labels_fc,
+  lineData,
+  lineDataFc,
+  barData,
+  shadedData1,
+  price_label,
+  si_label,
+  price_color,
+  si_color,
+}: {
+  title: string;
+  x_labels: string[];
+  x_labels_fc: string[];
+  lineData: number[];
+  lineDataFc: number[];
+  barData: number[];
+  shadedData1: number[][]; // each element is a time series (for one quantile band)
+  price_label: string;
+  si_label: string;
+  price_color: string;
+  si_color: string;
+}) {
+  const cleanedLabels = [...x_labels, ...x_labels_fc].map((label) =>
+    label instanceof Date ? label.toISOString() : label
+  );
+  const formattedLabels = formatTimeLabels(cleanedLabels);
+
+  // Calculate axis ranges
+  const maxAbsValue_si = Math.max(
+    Math.abs(Math.min(...barData, 0)),
+    Math.abs(Math.max(...barData, 0)),
+    Math.abs(Math.min(...shadedData1.flat(), 0)),
+    Math.abs(Math.max(...shadedData1.flat(), 0))
+  );
+  const maxAbsValue_price = Math.max(
+    Math.abs(Math.min(...lineData, 0)),
+    Math.abs(Math.max(...lineData, 0)),
+    Math.abs(Math.min(...lineDataFc, 0)),
+    Math.abs(Math.max(...lineDataFc, 0)),
+    );
+
+    console.log(lineDataFc)
+    console.log(new Array(lineData.length).fill(null).concat(lineDataFc))
+
+  const datasetsHist = [
+    {
+      type: "line",
+      label: price_label,
+      data: lineData,
+      borderColor: price_color,
+      backgroundColor: `${price_color}40`,
+      yAxisID: "y1",
+    },
+    {
+      type: "line",
+      label: "Fct price",
+      data: new Array(lineData.length).fill(null).concat(lineDataFc),
+      borderColor: "rgba(33, 115, 115, 0.62)",
+      backgroundColor: "rgba(75, 192, 192, 0)",
+      yAxisID: "y1",
+    },
+    {
+      type: "bar",
+      label: si_label,
+      data: barData,
+      backgroundColor: si_color,
+      borderColor: `${si_color}80`,
+      yAxisID: "y2",
+    },
+    {
+      type: "bar",
+      label: "Net discharge fc",
+      data: new Array(lineData.length).fill(null).concat(shadedData1),
+      backgroundColor: si_color,
+      borderColor: `${si_color}80`,
+      yAxisID: "y2",
+    },
+  ];
+
+  const chartData = {
+    labels: formattedLabels,
+    datasets: datasetsHist,
+  };
+
+  const options = {
+    responsive: true,
+    scales: {
+      x: {
+        ticks: { maxTicksLimit: 12 },
+      },
+      y1: {
+        type: "linear",
+        position: "left",
+        title: { display: true, text: price_label },
+        suggestedMin: -maxAbsValue_price,
+        suggestedMax: maxAbsValue_price,
+      },
+      y2: {
+        stacked: false,
+        type: "linear",
+        position: "right",
+        title: { display: true, text: si_label },
+        suggestedMin: -maxAbsValue_si,
+        suggestedMax: maxAbsValue_si,
+        grid: { drawOnChartArea: false },
+      },
+    },
+    plugins: {
+      legend: {
       },
     },
   };

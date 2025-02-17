@@ -1,19 +1,17 @@
-import { Line,Bar } from "react-chartjs-2";
+import { Line, Bar } from "react-chartjs-2";
 import { Chart } from "react-chartjs-2";
 import "chart.js/auto";
 import { DateTime } from "luxon";
-import { useRef,useEffect } from 'react';
+import { useRef, useEffect } from "react";
 
-
-function formatTimeLabels(labels:string[]){
+function formatTimeLabels(labels: string[]) {
   // Convert UTC timestamps to Europe/Brussels and format them
-  const formattedLabels = labels.map((timestamp) =>
+  return labels.map((timestamp) =>
     DateTime.fromISO(timestamp, { zone: "utc" })
       .setZone("Europe/Brussels")
-      .toFormat("HH:mm") // Example: "11 Feb 19:00"
-    );
-    return formattedLabels
-  }
+      .toFormat("HH:mm")
+  );
+}
 
 export function CombinedBarLineForecastAndHistChart({
   title,
@@ -35,29 +33,28 @@ export function CombinedBarLineForecastAndHistChart({
   lineData: number[];
   lineDataFc: number[];
   barData: number[];
-  shadedData1:number[][],
-  quantiles: number[],
+  shadedData1: number[][]; // each element is a time series (for one quantile band)
+  quantiles: number[];
   price_label: string;
   si_label: string;
   price_color: string;
   si_color: string;
-}){
-  // console.log(quantiles)
-  const cleanedLabels = [...x_labels, ...x_labels_fc].map(label =>
+}) {
+  const cleanedLabels = [...x_labels, ...x_labels_fc].map((label) =>
     label instanceof Date ? label.toISOString() : label
   );
-  
   const formattedLabels = formatTimeLabels(cleanedLabels);
-    // Find the absolute max value to ensure symmetry
+
+  // Calculate axis ranges
   const maxAbsValue_si = Math.max(
     Math.abs(Math.min(...barData, 0)),
     Math.abs(Math.max(...barData, 0))
   );
-  // console.log(price_data)
   const maxAbsValue_price = Math.max(
     Math.abs(Math.min(...lineData, 0)),
-    Math.abs(Math.max(...lineData, 0)),
+    Math.abs(Math.max(...lineData, 0))
   );
+
   const datasetsHist = [
     {
       type: "line",
@@ -84,22 +81,29 @@ export function CombinedBarLineForecastAndHistChart({
       yAxisID: "y2",
     },
   ];
-  
-  // Generate shaded forecast datasets with quantiles and historical data
-  const shadedForecastchartDatasets = shadedFCDatasets(quantiles, shadedData1, lineData.length);
-  
+
+  // // Generate the shaded forecast datasets (with grouping)
+  // const shadedForecastchartDatasets = shadedFCDatasets(
+  //   quantiles,
+  //   shadedData1,
+  //   lineData.length
+  // );
+
+  const shadedForecastchartDatasets = shadedFCDatasets(
+    quantiles,
+    shadedData1,
+    lineData.length
+  );
   const chartData = {
     labels: formattedLabels,
-    datasets: [...datasetsHist, ...shadedForecastchartDatasets], // Combine all datasets
+    datasets: [...datasetsHist, ...shadedForecastchartDatasets],
   };
-  
+
   const options = {
     responsive: true,
     scales: {
       x: {
-        ticks: {
-          maxTicksLimit: 12,
-        },
+        ticks: { maxTicksLimit: 12 },
       },
       y1: {
         type: "linear",
@@ -109,6 +113,7 @@ export function CombinedBarLineForecastAndHistChart({
         suggestedMax: maxAbsValue_price,
       },
       y2: {
+        stacked: false,
         type: "linear",
         position: "right",
         title: { display: true, text: si_label },
@@ -119,50 +124,292 @@ export function CombinedBarLineForecastAndHistChart({
     },
     plugins: {
       legend: {
-        onClick: function (e, legendItem, legend) {
-          // Custom behavior for toggling datasets, ensuring the shaded datasets are toggled
-          const index = legendItem.datasetIndex;
-          const ci = legend.chart;
-          const meta = ci.getDatasetMeta(index);
-          meta.hidden = !meta.hidden;
-          ci.update();
+        labels: {
+          filter: (legendItem, chartData) => {
+            // Only include legend items that have a non-empty label.
+            return legendItem.text !== "";
+          },
         },
+        // Custom onClick for group toggling remains unchanged.
+        onClick: function (e, legendItem, legend) {
+          const chart = legend.chart;
+          const dsIndex = legendItem.datasetIndex;
+          const ds = chart.data.datasets[dsIndex];
+          const meta = chart.getDatasetMeta(dsIndex);
+        
+          // If the dataset doesn't belong to a group, toggle it normally.
+          if (!ds.group) {
+            meta.hidden = meta.hidden === null ? !chart.data.datasets[dsIndex].hidden : !meta.hidden;
+          } else {
+            // For grouped datasets, toggle every dataset in the same group.
+            const groupLabel = ds.group;
+            chart.data.datasets.forEach((dataset, index) => {
+              if (dataset.group === groupLabel) {
+                const datasetMeta = chart.getDatasetMeta(index);
+                datasetMeta.hidden = datasetMeta.hidden === null
+                  ? !chart.data.datasets[index].hidden
+                  : !datasetMeta.hidden;
+              }
+            });
+          }
+          chart.update();
+        }
       },
     },
   };
+
   return (
     <div className="mt-8">
       <h2 className="text-lg font-bold">{title}</h2>
-      <Chart type="bar" data={chartData} options={options}  />
+      <Chart type="bar" data={chartData} options={options} />
     </div>
   );
-
 }
 
-function shadedFCDatasets(quantiles: number[], shadedData1: number[][], historicalLength: number) {
+function shadedFCDatasets(
+  quantiles: number[],
+  shadedData1: number[][],
+  historicalLength: number
+) {
+  const groupLabel = "SI Forecast Uncertainty";
+  // Create quantile datasets (these won't have their own legend entry)
   const shadedDatasets = quantiles.slice(0, -1).map((q, i) => ({
     type: "line",
-    label: `SI Forecast (${quantiles[i] * 100}–${quantiles[i + 1] * 100}%)`, // Proper label for each shaded area
+    label: "", // No individual label
+    group: groupLabel, // Add a custom group property
     data: Array(historicalLength).fill(null).concat(shadedData1[i]),
-    borderColor: "rgba(0, 0, 0, 0)", // Invisible line
-    backgroundColor: `rgba(0, 0, 255, ${1.5 * (quantiles[i + 1] - quantiles[i])})`, // Color with opacity for shading
-    fill: "-1", // Fill between this and the next quantile
+    borderColor: "rgba(0, 0, 0, 0)",
+    // Adjust opacity scaling as desired
+    backgroundColor: `rgba(0, 0, 255, ${1.5 * (quantiles[i + 1] - quantiles[i])})`,
+    fill: "-1", // Fill toward the next dataset
     yAxisID: "y2",
-    hidden: false, // Set this to 'false' to make it visible by default (can be toggled)
+    hidden: false,
+    pointRadius: 0,      // Remove the dots
+    pointHoverRadius: 0, // Remove hover dots
   }));
 
-  // Add a dummy dataset just for the legend (this will be toggled with the rest of the shaded datasets)
+  // Create a dummy dataset for the legend (this is the one that appears in the legend)
   const legendDataset = {
     type: "line",
-    label: "SI Forecast Uncertainty", // Single legend entry
-    data: Array(historicalLength).fill(null), // Empty data, serves only as a legend item
-    borderColor: "rgba(0, 0, 0, 0)", // Invisible line
-    backgroundColor: "rgba(0, 0, 255, 0.3)", // Representative color for the legend
+    label: groupLabel,
+    group: groupLabel,
+    data: Array(historicalLength).fill(null), // No actual data plotted
+    borderColor: "rgba(0, 0, 0, 0)",
+    backgroundColor: "rgba(0, 0, 255, 0.3)",
     fill: true,
     yAxisID: "y2",
-    hidden: false, // Make it visible by default
+    hidden: false,
   };
 
-  // Return both the legend dataset and the shaded datasets
+  // Return the legend dataset first, then all the quantile datasets.
   return [legendDataset, ...shadedDatasets];
+}
+
+function shadedFCBarDatasets(
+  quantiles: number[],
+  // Here, shadedData1 is an array where each element is a time series for a specific forecast quantile.
+  // For example, shadedData1[0] are forecast values for quantile q0,
+  // shadedData1[1] for quantile q1, and so on.
+  shadedData1: number[][], 
+  historicalLength: number
+) {
+  const groupLabel = "SI Forecast Uncertainty (Bars)";
+  const datasets = quantiles.slice(0, -1).map((q, i) => {
+    // For each quantile interval, build the floating bar data:
+    // For forecast times, each data point is [lower, upper] where:
+    //   lower = forecast value for quantile i, and
+    //   upper = forecast value for quantile i+1.
+    const forecastData = shadedData1[i].map((lower, idx) => {
+      const upper = shadedData1[i + 1][idx];
+      return [lower, upper];
+    });
+    // Prepend historical values as null so that bars appear only in forecast times:
+    const data = Array(historicalLength).fill(null).concat(forecastData);
+    // Use a scaling factor (here, 1.5) similar to your opacity computation:
+    const opacity = 1.5 * (quantiles[i + 1] - quantiles[i]);
+    return {
+      type: "bar",
+      label: "", // hide individual legend entry
+      group: groupLabel, // assign to the group
+      data,
+      backgroundColor: `rgba(0, 0, 255, ${opacity})`,
+      borderColor: "rgba(0,0,0,0)",
+      yAxisID: "y2",
+      // Force all bars into the same stack so that they overlap:
+      stack: groupLabel,
+      // Optionally control bar width (adjust these as needed):
+      barPercentage: 1,
+      categoryPercentage: 1,
+      barThickness: 5,
+    };
+  });
+
+  // Create a dummy dataset that will serve as the single legend item:
+  const legendDataset = {
+    type: "bar",
+    label: groupLabel,
+    group: groupLabel,
+    data: Array(historicalLength).fill(null), // no actual data needed here
+    backgroundColor: "rgba(0, 0, 255, 0.3)",
+    borderColor: "rgba(0,0,0,0)",
+    yAxisID: "y2",
+    stack: groupLabel,
+  };
+
+  return [legendDataset, ...datasets];
+}
+
+
+
+export function CombinedBarLineForecastAndHistChart_2({
+  title,
+  x_labels,
+  x_labels_fc,
+  lineData,
+  lineDataFc,
+  barData,
+  shadedData1,
+  quantiles,
+  price_label,
+  si_label,
+  price_color,
+  si_color,
+}: {
+  title: string;
+  x_labels: string[];
+  x_labels_fc: string[];
+  lineData: number[];
+  lineDataFc: number[];
+  barData: number[];
+  shadedData1: number[][]; // each element is a time series (for one quantile band)
+  quantiles: number[];
+  price_label: string;
+  si_label: string;
+  price_color: string;
+  si_color: string;
+}) {
+  const cleanedLabels = [...x_labels, ...x_labels_fc].map((label) =>
+    label instanceof Date ? label.toISOString() : label
+  );
+  const formattedLabels = formatTimeLabels(cleanedLabels);
+
+  // Calculate axis ranges
+  const maxAbsValue_si = Math.max(
+    Math.abs(Math.min(...barData, 0)),
+    Math.abs(Math.max(...barData, 0))
+  );
+  const maxAbsValue_price = Math.max(
+    Math.abs(Math.min(...lineData, 0)),
+    Math.abs(Math.max(...lineData, 0))
+  );
+
+  const datasetsHist = [
+    {
+      type: "line",
+      label: price_label,
+      data: lineData,
+      borderColor: price_color,
+      backgroundColor: `${price_color}40`,
+      yAxisID: "y1",
+    },
+    {
+      type: "line",
+      label: "Fct price",
+      data: new Array(lineData.length).fill(null).concat(lineDataFc),
+      borderColor: "rgba(75, 192, 192, 0.62)",
+      backgroundColor: "rgba(75, 192, 192, 0)",
+      yAxisID: "y1",
+    },
+    {
+      type: "bar",
+      label: si_label,
+      data: barData,
+      backgroundColor: si_color,
+      borderColor: `${si_color}80`,
+      yAxisID: "y2",
+    },
+  ];
+
+  // // Generate the shaded forecast datasets (with grouping)
+  // const shadedForecastchartDatasets = shadedFCDatasets(
+  //   quantiles,
+  //   shadedData1,
+  //   lineData.length
+  // );
+
+  const shadedForecastchartDatasets = shadedFCBarDatasets(
+    quantiles,
+    shadedData1,
+    lineData.length
+  );
+  const chartData = {
+    labels: formattedLabels,
+    datasets: [...datasetsHist, ...shadedForecastchartDatasets],
+  };
+
+  const options = {
+    responsive: true,
+    scales: {
+      x: {
+        ticks: { maxTicksLimit: 12 },
+      },
+      y1: {
+        type: "linear",
+        position: "left",
+        title: { display: true, text: price_label },
+        suggestedMin: -maxAbsValue_price,
+        suggestedMax: maxAbsValue_price,
+      },
+      y2: {
+        stacked: false,
+        type: "linear",
+        position: "right",
+        title: { display: true, text: si_label },
+        suggestedMin: -maxAbsValue_si,
+        suggestedMax: maxAbsValue_si,
+        grid: { drawOnChartArea: false },
+      },
+    },
+    plugins: {
+      legend: {
+        labels: {
+          filter: (legendItem, chartData) => {
+            // Only include legend items that have a non-empty label.
+            return legendItem.text !== "";
+          },
+        },
+        // Custom onClick for group toggling remains unchanged.
+        onClick: function (e, legendItem, legend) {
+          const chart = legend.chart;
+          const dsIndex = legendItem.datasetIndex;
+          const ds = chart.data.datasets[dsIndex];
+          const meta = chart.getDatasetMeta(dsIndex);
+        
+          // If the dataset doesn't belong to a group, toggle it normally.
+          if (!ds.group) {
+            meta.hidden = meta.hidden === null ? !chart.data.datasets[dsIndex].hidden : !meta.hidden;
+          } else {
+            // For grouped datasets, toggle every dataset in the same group.
+            const groupLabel = ds.group;
+            chart.data.datasets.forEach((dataset, index) => {
+              if (dataset.group === groupLabel) {
+                const datasetMeta = chart.getDatasetMeta(index);
+                datasetMeta.hidden = datasetMeta.hidden === null
+                  ? !chart.data.datasets[index].hidden
+                  : !datasetMeta.hidden;
+              }
+            });
+          }
+          chart.update();
+        }
+      },
+    },
+  };
+
+  return (
+    <div className="mt-8">
+      <h2 className="text-lg font-bold">{title}</h2>
+      <Chart type="bar" data={chartData} options={options} />
+    </div>
+  );
 }

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { fetchAsJson } from "../utils/fetchData";
 import "chart.js/auto";
-import {MultiLineChart,SingleLineChart,ImbaChart,CombinedBarLineForecastAndHistChart} from "../utils/prepareCharts";
+import {CombinedBarLineForecastAndHistChart,CombinedBarLineForecastAndHistChart_2} from "../utils/prepareCharts";
 import {splitAndSortLTSData,findLatestEntryst,splitStEntry,findUnknownTimes} from "../utils/prepareData";
 
 export default function Home() {
@@ -48,6 +48,8 @@ export default function Home() {
       {/* {lt_data && <ImbaChart title ={"Operational decisions"} x_labels={labelsLT} si_data={netDischarge} price_data={soc} price_label = "SOC" si_label = "Net Discharge" price_color = "rgb(17, 18, 18)" si_color = "rgb(39, 20, 208)" />} */}
       {/* {st_data && <ImbaChart title ={"Price forecast"} x_labels={labels_fc} si_data={net_dc_fc} price_data={price_fc} price_label = "SOC" si_label = "Net Discharge" price_color = "rgb(17, 18, 18)" si_color = "rgb(39, 20, 208)" />} */}
       {st_data && <CombinedBarLineForecastAndHistChart title ={"Price and SI"} x_labels={labelsLT} x_labels_fc={labels_fc} barData={SI} lineData={price} lineDataFc={price} shadedData1={si_fc} quantiles={quantiles} price_label = "Euro/MWh" si_label = "MW" price_color =  "rgba(75,192,192,1)" si_color = "rgb(208, 105, 20)" />}
+      {st_data && <CombinedBarLineForecastAndHistChart_2 title ={"Price and SI"} x_labels={labelsLT} x_labels_fc={labels_fc} barData={SI} lineData={price} lineDataFc={price} shadedData1={si_fc} quantiles={quantiles} price_label = "Euro/MWh" si_label = "MW" price_color =  "rgba(75,192,192,1)" si_color = "rgb(208, 105, 20)" />}
+
       {/* {st_data && <CombinedBarLineForecastAndHistChart title ={"Operational Decisions"} x_labels={labelsLT} x_labels_fc={labels_fc} barData={netDischarge} lineData={soc} lineDataFc={si_fc} price_label = "SOC" si_label = "Net Discharge" price_color = " rgb(17, 18, 18)" si_color = "rgb(208, 105, 20)" />} */}
       
       {/* {lt_data && <SingleLineChart title ={"SI"} x_labels={labels} data={SI} label = "SI" color = "rgb(14, 173, 67)" />}     */}

@@ -38,19 +38,24 @@ export default function Home() {
 
   // console.log(latestEntryST)
   // console.log(labelsLT)
-  // console.log(labels_fc)
+  // console.log(price_fc)
   // console.log(entry)
-  const battery_level  =soc_fc[0]
+
+  const decision = netDischarge > 0.01 ? "Discharge" : netDischarge < -0.01 ? "Charge" : "Wait";
+  const battery_level  = soc_fc?.[0] ?? 0;
+  const currentQH = labels_fc?.[0] instanceof Date 
+  ? labels_fc[0].toLocaleString("en-GB", { hour12: false })  // Adjust format as needed
+  : labels_fc?.[0] ?? "N/A";
+  const thisQHPrice = Math.round(price_fc?.[0] ?? 0);
   return (
     <div className="p-8">
-      <h1 className="text-xl font-bold">API Data Fetching Example</h1>
       {loadingLT && <p>Loading...</p>}
       {error && <p className="text-red-500">Error: {error}</p>}
   
       {/* Flexbox for Side-by-Side Layout */}
       <div className="flex gap-8">
         {/* Charts Section */}
-        <div className="flex-1 flex flex-col gap-4" style={{ minHeight: "100px",maxWidth: "800px" }}>
+        <div className="flex-1 flex flex-col gap-4" style={{ minHeight: "100px",maxWidth: "600px" }}>
           {st_data && (
             <CombinedBarLineForecastAndHistChart_2
               title={"Price and SI"}
@@ -58,7 +63,7 @@ export default function Home() {
               x_labels_fc={labels_fc}
               barData={SI}
               lineData={price}
-              lineDataFc={price}
+              lineDataFc={price_fc}
               shadedData1={si_fc}
               quantiles={quantiles}
               price_label="Imbalance price (Euro/MWh)"
@@ -86,8 +91,8 @@ export default function Home() {
         </div>
   
         {/* Battery Component - Same Height as Charts */}
-        <div className="flex items-center" style={{ height: "1000px" }}>
-          <Battery level={battery_level*100} />
+        <div className="flex items-center" style={{ height: "600px" }}>
+          <Battery level={battery_level} currentQH = {currentQH} priceForecast={thisQHPrice} decision={decision} lt_data = {lt_data}/>
         </div>
       </div>
     </div>

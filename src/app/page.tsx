@@ -5,6 +5,8 @@ import { fetchAsJson } from "../utils/fetchData";
 import "chart.js/auto";
 import {CombinedBarLineForecastAndHistChart_2,CombinedBarLineForecastAndHistChartOperational,DynamicTable} from "../utils/prepareCharts";
 import {splitAndSortLTSData,findLatestEntryst,splitStEntry,findUnknownTimes} from "../utils/prepareData";
+import {Battery} from "../utils/prepareTable";
+
 
 export default function Home() {
   const [lt_data, setLtData] = useState<Record<string, any> | null>(null);
@@ -38,22 +40,56 @@ export default function Home() {
   // console.log(labelsLT)
   // console.log(labels_fc)
   // console.log(entry)
-  
+  const battery_level  =soc_fc[0]
   return (
     <div className="p-8">
       <h1 className="text-xl font-bold">API Data Fetching Example</h1>
       {loadingLT && <p>Loading...</p>}
       {error && <p className="text-red-500">Error: {error}</p>}
-      {/* {lt_data && <ImbaChart title ={"Imbalance price"} x_labels={labelsLT} si_data={SI} price_data={price} price_label = "Imbalance price" si_label = "SI" price_color = "rgba(75,192,192,1)" si_color = "rgb(208, 105, 20)" />} */}
-      {/* {lt_data && <ImbaChart title ={"Operational decisions"} x_labels={labelsLT} si_data={netDischarge} price_data={soc} price_label = "SOC" si_label = "Net Discharge" price_color = "rgb(17, 18, 18)" si_color = "rgb(39, 20, 208)" />} */}
-      {/* {st_data && <ImbaChart title ={"Price forecast"} x_labels={labels_fc} si_data={net_dc_fc} price_data={price_fc} price_label = "SOC" si_label = "Net Discharge" price_color = "rgb(17, 18, 18)" si_color = "rgb(39, 20, 208)" />} */}
-      {/* {st_data && <CombinedBarLineForecastAndHistChart title ={"Price and SI"} x_labels={labelsLT} x_labels_fc={labels_fc} barData={SI} lineData={price} lineDataFc={price} shadedData1={si_fc} quantiles={quantiles} price_label = "Euro/MWh" si_label = "MW" price_color =  "rgba(75,192,192,1)" si_color = "rgb(208, 105, 20)" />} */}
-      {st_data && <CombinedBarLineForecastAndHistChart_2 title ={"Price and SI"} x_labels={labelsLT} x_labels_fc={labels_fc} barData={SI} lineData={price} lineDataFc={price} shadedData1={si_fc} quantiles={quantiles} price_label = "Imbalance price (Euro/MWh)" si_label = "System Imbalance (MW)" price_color =  "rgb(75,192,192)" si_color = "rgb(208, 105, 20)" />}
-
-      {st_data && <CombinedBarLineForecastAndHistChartOperational title ={"Operational Decisions"} x_labels={labelsLT} x_labels_fc={labels_fc} barData={netDischarge} lineData={soc} lineDataFc={soc_fc} shadedData1={net_dc_fc} price_label = "SOC (MWh)" si_label = "Net Discharge (MW)" soc_color = " rgb(19, 172, 27)" netDis_color = "rgb(39, 20, 208)" />}
-      
-      {/* {lt_data && <SingleLineChart title ={"SI"} x_labels={labels} data={SI} label = "SI" color = "rgb(14, 173, 67)" />}     */}
-      {<DynamicTable/>}
-      </div>      
+  
+      {/* Flexbox for Side-by-Side Layout */}
+      <div className="flex gap-8">
+        {/* Charts Section */}
+        <div className="flex-1 flex flex-col gap-4" style={{ minHeight: "100px",maxWidth: "800px" }}>
+          {st_data && (
+            <CombinedBarLineForecastAndHistChart_2
+              title={"Price and SI"}
+              x_labels={labelsLT}
+              x_labels_fc={labels_fc}
+              barData={SI}
+              lineData={price}
+              lineDataFc={price}
+              shadedData1={si_fc}
+              quantiles={quantiles}
+              price_label="Imbalance price (Euro/MWh)"
+              si_label="System Imbalance (MW)"
+              price_color="rgb(75,192,192)"
+              si_color="rgb(208, 105, 20)"
+            />
+          )}
+  
+          {st_data && (
+            <CombinedBarLineForecastAndHistChartOperational
+              title={"Operational Decisions"}
+              x_labels={labelsLT}
+              x_labels_fc={labels_fc}
+              barData={netDischarge}
+              lineData={soc}
+              lineDataFc={soc_fc}
+              shadedData1={net_dc_fc}
+              price_label="SOC (MWh)"
+              si_label="Net Discharge (MW)"
+              soc_color="rgb(19, 172, 27)"
+              netDis_color="rgb(39, 20, 208)"
+            />
+          )}
+        </div>
+  
+        {/* Battery Component - Same Height as Charts */}
+        <div className="flex items-center" style={{ height: "1000px" }}>
+          <Battery level={battery_level*100} />
+        </div>
+      </div>
+    </div>
   );
 }

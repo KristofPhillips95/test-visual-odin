@@ -2,7 +2,9 @@ import { Line, Bar } from "react-chartjs-2";
 import { Chart } from "react-chartjs-2";
 import "chart.js/auto";
 import { DateTime } from "luxon";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect,useState } from "react";
+import { useReactTable, getCoreRowModel, flexRender } from "@tanstack/react-table";
+
 
 function formatTimeLabels(labels: string[]) {
   // Convert UTC timestamps to Europe/Brussels and format them
@@ -12,160 +14,6 @@ function formatTimeLabels(labels: string[]) {
       .toFormat("HH:mm")
   );
 }
-
-export function CombinedBarLineForecastAndHistChart({
-  title,
-  x_labels,
-  x_labels_fc,
-  lineData,
-  lineDataFc,
-  barData,
-  shadedData1,
-  quantiles,
-  price_label,
-  si_label,
-  price_color,
-  si_color,
-}: {
-  title: string;
-  x_labels: string[];
-  x_labels_fc: string[];
-  lineData: number[];
-  lineDataFc: number[];
-  barData: number[];
-  shadedData1: number[][]; // each element is a time series (for one quantile band)
-  quantiles: number[];
-  price_label: string;
-  si_label: string;
-  price_color: string;
-  si_color: string;
-}) {
-  const cleanedLabels = [...x_labels, ...x_labels_fc].map((label) =>
-    label instanceof Date ? label.toISOString() : label
-  );
-  const formattedLabels = formatTimeLabels(cleanedLabels);
-
-  // Calculate axis ranges
-  const maxAbsValue_si = Math.max(
-    Math.abs(Math.min(...barData, 0)),
-    Math.abs(Math.max(...barData, 0))
-  );
-  const maxAbsValue_price = Math.max(
-    Math.abs(Math.min(...lineData, 0)),
-    Math.abs(Math.max(...lineData, 0))
-  );
-
-  const datasetsHist = [
-    {
-      type: "line",
-      label: price_label,
-      data: lineData,
-      borderColor: price_color,
-      backgroundColor: `${price_color}40`,
-      yAxisID: "y1",
-    },
-    {
-      type: "line",
-      label: "Fct price",
-      data: new Array(lineData.length).fill(null).concat(lineDataFc),
-      borderColor: "rgba(75, 192, 192, 0.62)",
-      backgroundColor: "rgba(75, 192, 192, 0)",
-      yAxisID: "y1",
-    },
-    {
-      type: "bar",
-      label: si_label,
-      data: barData,
-      backgroundColor: si_color,
-      borderColor: `${si_color}80`,
-      yAxisID: "y2",
-    },
-  ];
-
-  // // Generate the shaded forecast datasets (with grouping)
-  // const shadedForecastchartDatasets = shadedFCDatasets(
-  //   quantiles,
-  //   shadedData1,
-  //   lineData.length
-  // );
-
-  const shadedForecastchartDatasets = shadedFCDatasets(
-    quantiles,
-    shadedData1,
-    lineData.length
-  );
-  const chartData = {
-    labels: formattedLabels,
-    datasets: [...datasetsHist, ...shadedForecastchartDatasets],
-  };
-
-  const options = {
-    responsive: true,
-    scales: {
-      x: {
-        ticks: { maxTicksLimit: 12 },
-      },
-      y1: {
-        type: "linear",
-        position: "left",
-        title: { display: true, text: price_label },
-        suggestedMin: -maxAbsValue_price,
-        suggestedMax: maxAbsValue_price,
-      },
-      y2: {
-        stacked: false,
-        type: "linear",
-        position: "right",
-        title: { display: true, text: si_label },
-        suggestedMin: -maxAbsValue_si,
-        suggestedMax: maxAbsValue_si,
-        grid: { drawOnChartArea: false },
-      },
-    },
-    plugins: {
-      legend: {
-        labels: {
-          filter: (legendItem, chartData) => {
-            // Only include legend items that have a non-empty label.
-            return legendItem.text !== "";
-          },
-        },
-        // Custom onClick for group toggling remains unchanged.
-        onClick: function (e, legendItem, legend) {
-          const chart = legend.chart;
-          const dsIndex = legendItem.datasetIndex;
-          const ds = chart.data.datasets[dsIndex];
-          const meta = chart.getDatasetMeta(dsIndex);
-        
-          // If the dataset doesn't belong to a group, toggle it normally.
-          if (!ds.group) {
-            meta.hidden = meta.hidden === null ? !chart.data.datasets[dsIndex].hidden : !meta.hidden;
-          } else {
-            // For grouped datasets, toggle every dataset in the same group.
-            const groupLabel = ds.group;
-            chart.data.datasets.forEach((dataset, index) => {
-              if (dataset.group === groupLabel) {
-                const datasetMeta = chart.getDatasetMeta(index);
-                datasetMeta.hidden = datasetMeta.hidden === null
-                  ? !chart.data.datasets[index].hidden
-                  : !datasetMeta.hidden;
-              }
-            });
-          }
-          chart.update();
-        }
-      },
-    },
-  };
-
-  return (
-    <div className="mt-8">
-      <h2 className="text-lg font-bold">{title}</h2>
-      <Chart type="bar" data={chartData} options={options} />
-    </div>
-  );
-}
-
 function shadedFCDatasets(
   quantiles: number[],
   shadedData1: number[][],
@@ -211,9 +59,10 @@ function shadedFCBarDatasets(
   // For example, shadedData1[0] are forecast values for quantile q0,
   // shadedData1[1] for quantile q1, and so on.
   shadedData1: number[][], 
-  historicalLength: number
+  historicalLength: number,
+  si_color: string
 ) {
-  const groupLabel = "SI Forecast Uncertainty (Bars)";
+  const groupLabel = "SI Forecast";
   const datasets = quantiles.slice(0, -1).map((q, i) => {
     // For each quantile interval, build the floating bar data:
     // For forecast times, each data point is [lower, upper] where:
@@ -226,14 +75,14 @@ function shadedFCBarDatasets(
     // Prepend historical values as null so that bars appear only in forecast times:
     const data = Array(historicalLength).fill(null).concat(forecastData);
     // Use a scaling factor (here, 1.5) similar to your opacity computation:
-    const opacity = 1.5 * (quantiles[i + 1] - quantiles[i]);
+    const opacity =3 * (quantiles[i + 1] - quantiles[i]);
     return {
       type: "bar",
       label: "", // hide individual legend entry
       group: groupLabel, // assign to the group
       data,
-      backgroundColor:`rgb(208, 105, 20, ${opacity})`,
-      borderColor: "rgba(0,0,0,0)",
+      backgroundColor: adjustOpacity(si_color,opacity),
+      borderColor: si_color,
       yAxisID: "y2",
       // Force all bars into the same stack so that they overlap:
       stack: groupLabel,
@@ -250,8 +99,8 @@ function shadedFCBarDatasets(
     label: groupLabel,
     group: groupLabel,
     data: Array(historicalLength).fill(null), // no actual data needed here
-    backgroundColor: "rgba(0, 0, 255, 0.3)",
-    borderColor: "rgba(0,0,0,0)",
+    backgroundColor: adjustOpacity(si_color,0.3),
+    borderColor: si_color,
     yAxisID: "y2",
     stack: groupLabel,
   };
@@ -313,15 +162,15 @@ export function CombinedBarLineForecastAndHistChart_2({
       label: price_label,
       data: lineData,
       borderColor: price_color,
-      backgroundColor: `${price_color}40`,
+      backgroundColor: price_color,
       yAxisID: "y1",
     },
     {
       type: "line",
-      label: "Fct price",
+      label: "Imbalance price forecast",
       data: new Array(lineData.length).fill(null).concat(lineDataFc),
-      borderColor: "rgba(75, 192, 192, 0.62)",
-      backgroundColor: "rgba(75, 192, 192, 0)",
+      borderColor: adjustOpacity(price_color,0.6),
+      backgroundColor: adjustOpacity(price_color,0.6),
       yAxisID: "y1",
     },
     {
@@ -339,7 +188,8 @@ export function CombinedBarLineForecastAndHistChart_2({
   const shadedForecastchartDatasets = shadedFCBarDatasets(
     quantiles,
     shadedData1,
-    lineData.length
+    lineData.length,
+    si_color
   );
   const chartData = {
     labels: formattedLabels,
@@ -423,8 +273,8 @@ export function CombinedBarLineForecastAndHistChartOperational({
   shadedData1,
   price_label,
   si_label,
-  price_color,
-  si_color,
+  soc_color,
+  netDis_color,
 }: {
   title: string;
   x_labels: string[];
@@ -435,8 +285,8 @@ export function CombinedBarLineForecastAndHistChartOperational({
   shadedData1: number[][]; // each element is a time series (for one quantile band)
   price_label: string;
   si_label: string;
-  price_color: string;
-  si_color: string;
+  soc_color: string;
+  netDis_color: string;
 }) {
   const cleanedLabels = [...x_labels, ...x_labels_fc].map((label) =>
     label instanceof Date ? label.toISOString() : label
@@ -457,40 +307,37 @@ export function CombinedBarLineForecastAndHistChartOperational({
     Math.abs(Math.max(...lineDataFc, 0)),
     );
 
-    console.log(lineDataFc)
-    console.log(new Array(lineData.length).fill(null).concat(lineDataFc))
-
   const datasetsHist = [
     {
       type: "line",
       label: price_label,
       data: lineData,
-      borderColor: price_color,
-      backgroundColor: `${price_color}40`,
+      borderColor: soc_color,
+      backgroundColor: soc_color,
       yAxisID: "y1",
     },
     {
       type: "line",
-      label: "Fct price",
+      label: "SOC forecast",
       data: new Array(lineData.length).fill(null).concat(lineDataFc),
-      borderColor: "rgba(33, 115, 115, 0.62)",
-      backgroundColor: "rgba(75, 192, 192, 0)",
+      borderColor:  adjustOpacity(soc_color,0.3),
+      backgroundColor: adjustOpacity(soc_color,0.3),
       yAxisID: "y1",
     },
     {
       type: "bar",
       label: si_label,
       data: barData,
-      backgroundColor: si_color,
-      borderColor: `${si_color}80`,
+      backgroundColor: netDis_color,
+      borderColor: `${netDis_color}80`,
       yAxisID: "y2",
     },
     {
       type: "bar",
-      label: "Net discharge fc",
+      label: "Net discharge forecast",
       data: new Array(lineData.length).fill(null).concat(shadedData1),
-      backgroundColor: si_color,
-      borderColor: `${si_color}80`,
+      backgroundColor: adjustOpacity(netDis_color,0.3),
+      borderColor: adjustOpacity(netDis_color,0.1),
       yAxisID: "y2",
     },
   ];
@@ -533,6 +380,78 @@ export function CombinedBarLineForecastAndHistChartOperational({
     <div className="mt-8">
       <h2 className="text-lg font-bold">{title}</h2>
       <Chart type="bar" data={chartData} options={options} />
+    </div>
+  );
+}
+
+function adjustOpacity(rgbColor: string, alpha:number) {
+  return rgbColor.replace("rgb", "rgba").replace(")", `, ${alpha})`);
+};
+
+const mockFetchData = () => {
+  return {
+    quarterHour: "14:15",
+    forecastedPrice: (Math.random() * 100).toFixed(2),
+    operationalDecision: Math.random() > 0.5 ? "Charge" : "Discharge",
+    avgChargePrice: (Math.random() * 50).toFixed(2),
+    avgDischargePrice: (Math.random() * 50 + 50).toFixed(2),
+  };
+};
+
+export function DynamicTable() {
+  const [data, setData] = useState([mockFetchData()]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setData([mockFetchData()]);
+    }, 15000); // Update every 15 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const columns = [
+    { accessorKey: "quarterHour", header: "Quarter Hour" },
+    { accessorKey: "forecastedPrice", header: "Forecasted Price (€)" },
+    { accessorKey: "operationalDecision", header: "Operational Decision" },
+    { accessorKey: "avgChargePrice", header: "Avg Charge Price (€/MWh)" },
+    { accessorKey: "avgDischargePrice", header: "Avg Discharge Price (€/MWh)" },
+  ];
+
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+  });
+
+  return (
+    <div className="p-4 bg-white shadow-lg rounded-lg w-full max-w-2xl">
+      <h2 className="text-xl font-semibold mb-4 text-gray-700">Real-Time Forecast Data</h2>
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse rounded-lg overflow-hidden shadow-md">
+          <thead>
+            {table.getHeaderGroups().map(headerGroup => (
+              <tr key={headerGroup.id} className="bg-gray-800 text-white text-left">
+                {headerGroup.headers.map(header => (
+                  <th key={header.id} className="px-6 py-3">
+                    {flexRender(header.column.columnDef.header, header.getContext())}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody>
+            {table.getRowModel().rows.map(row => (
+              <tr key={row.id} className="bg-gray-100 border-b text-center">
+                {row.getVisibleCells().map(cell => (
+                  <td key={cell.id} className="px-6 py-3">
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

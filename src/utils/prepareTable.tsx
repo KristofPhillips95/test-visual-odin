@@ -35,7 +35,7 @@ function findAvgSpread(json: Record<string, any>,x:number,PERatio = 1/2) {
 
   // const SI = lastEntries.map((entry) => entry.SI);
   const nb_cycles = (lastEntries.filter((entry) => entry.net_discharge > 0.1).length + lastEntries.filter((entry) => entry.net_discharge < -0.1).length)/(2*4)*PERatio
-  return [(averagedischargeprice - averagechargeprice), nb_cycles] as const;
+  return [Math.round((averagedischargeprice - averagechargeprice)), nb_cycles] as const;
 }
 
 export function Battery({ level, currentQH, priceForecast, decision, lt_data }: BatteryProps & { currentQH: Date, priceForecast: number, decision: string,lt_data: [] }) {
@@ -46,8 +46,18 @@ export function Battery({ level, currentQH, priceForecast, decision, lt_data }: 
     if (levelPercentage > 20) return "rgba(196, 123, 28, 0.75)";
     return "rgba(255, 0, 0, 0.75)";
   };
-
-  const [avgSpread,avg_spread_2] = findAvgSpread(lt_data,100)
+  const avgSpreadLookback = [
+    { lookback: "6h", value: findAvgSpread(lt_data,24) },
+    { lookback: "1d", value:  findAvgSpread(lt_data,96) },
+    { lookback: "1w", value: findAvgSpread(lt_data,96*7) },
+  ];
+  // Example data structure for different lookbacks
+  const lookbacks = [24,96,96*7]
+  const lookbackData = [
+    { lookback: "6h", avgSpread: findAvgSpread(lt_data,lookbacks[0])[0], nbCycles: findAvgSpread(lt_data,lookbacks[0])[1] },
+    { lookback: "1d", avgSpread: findAvgSpread(lt_data,lookbacks[1])[0], nbCycles: findAvgSpread(lt_data,lookbacks[0])[1] },
+    { lookback: "7d", avgSpread: findAvgSpread(lt_data,lookbacks[2])[0], nbCycles: findAvgSpread(lt_data,lookbacks[0]*7)[1] },
+  ];
   return (
     <div style={{ position: "relative", display: "inline-block" }}>
       {/* Battery Container */}
@@ -94,10 +104,6 @@ export function Battery({ level, currentQH, priceForecast, decision, lt_data }: 
                 <td style={cellStyle}>Current quarter</td>
                 <td style={cellStyle}>{currentQH}</td>
               </tr>
-              {/* <tr>
-                <td style={cellStyle}>Charge Level</td>
-                <td style={cellStyle}>{level.toFixed(2)} MWh</td>
-              </tr> */}
               <tr>
                 <td style={cellStyle}>Price forecast</td>
                 <td style={cellStyle}>{priceForecast}</td>
@@ -107,12 +113,26 @@ export function Battery({ level, currentQH, priceForecast, decision, lt_data }: 
                 <td style={cellStyle}>{decision}</td>
               </tr>
               <tr>
-                <td style={cellStyle}>Avg spread</td>
-                <td style={cellStyle}>{avgSpread}</td>
-              </tr>
-              <tr>
-                <td style={cellStyle}>Nb cycles</td>
-                <td style={cellStyle}>{avg_spread_2}</td>
+              <td style={cellStyle}>
+              {lookbackData.map(({ lookback }) => (
+                      <tr key={lookback}>
+                        <td style={cellStyleSmall}>{lookback}</td>
+                      </tr>
+            ))}
+              </td>
+              <td style={cellStyle}>
+                <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <tbody>
+                    {lookbackData.map(({ lookback, avgSpread,nbCycles }) => (
+                      <tr key={lookback}>
+                        <td style={cellStyleSmall}>{avgSpread}</td>
+                        <td style={cellStyleSmall}>{nbCycles}</td>
+
+                      </tr>
+            ))}
+          </tbody>
+        </table>
+      </td>
               </tr>
             </tbody>
           </table>
@@ -142,4 +162,10 @@ const cellStyle: React.CSSProperties = {
   borderBottom: "1px solid #ccc",
   textAlign: "left",
   fontWeight: "bold",
+};
+const cellStyleSmall: React.CSSProperties = {
+  padding: "4px",
+  borderBottom: "1px solid #ccc",
+  textAlign: "left",
+  fontSize: "12px",
 };

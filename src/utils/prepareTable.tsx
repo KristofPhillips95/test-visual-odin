@@ -4,21 +4,8 @@ interface BatteryProps {
   level: number;
 }
 
-function findAvgSpreadd(lookback: number, prices: number[], net_discharge: number[]): number {
-  let totalSpread = 0;
-  let count = 0;
 
-  for (let i = 0; i < lookback; i++) {
-    if (prices[i] !== undefined && net_discharge[i] !== undefined) {
-      totalSpread += prices[i] * net_discharge[i];
-      count++;
-    }
-  }
-
-  return count > 0 ? totalSpread / count : 0;
-}
-
-function findAvgSpread(json: Record<string, any>,x:number) {
+function findAvgSpread(json: Record<string, any>,x:number,PERatio = 1/2) {
   if (!json || typeof json !== "object") {
     return [[], [], [], [], []]; // Return empty arrays to prevent errors
   }
@@ -38,18 +25,18 @@ function findAvgSpread(json: Record<string, any>,x:number) {
 
   const price = lastEntries.map((entry) => entry.price);
   const net_discharge = lastEntries.map((entry) => entry.net_discharge);
-  const averagechargeprice = lastEntries
+  const averagedischargeprice = lastEntries
   .filter((entry) => entry.net_discharge > 0.1) // Filter for net discharge greater than 0 (charge)
   .reduce((acc, entry) => acc + entry.price, 0.1) / lastEntries.filter((entry) => entry.net_discharge > 0.1).length;
 
-  const averagedischargeprice = lastEntries
+  const averagechargeprice = lastEntries
   .filter((entry) => entry.net_discharge < - 0.1) // Filter for net discharge greater than 0 (charge)
   .reduce((acc, entry) => acc + entry.price, 0.1) / lastEntries.filter((entry) => entry.net_discharge < -0.1).length;
 
   // const SI = lastEntries.map((entry) => entry.SI);
-  return [averagechargeprice, averagedischargeprice] as const;
+  const nb_cycles = (lastEntries.filter((entry) => entry.net_discharge > 0.1).length + lastEntries.filter((entry) => entry.net_discharge < -0.1).length)/(2*4)*PERatio
+  return [(averagedischargeprice - averagechargeprice), nb_cycles] as const;
 }
-
 
 export function Battery({ level, currentQH, priceForecast, decision, lt_data }: BatteryProps & { currentQH: Date, priceForecast: number, decision: string,lt_data: [] }) {
   console.log(currentQH)
@@ -124,7 +111,7 @@ export function Battery({ level, currentQH, priceForecast, decision, lt_data }: 
                 <td style={cellStyle}>{avgSpread}</td>
               </tr>
               <tr>
-                <td style={cellStyle}>Avg spread</td>
+                <td style={cellStyle}>Nb cycles</td>
                 <td style={cellStyle}>{avg_spread_2}</td>
               </tr>
             </tbody>

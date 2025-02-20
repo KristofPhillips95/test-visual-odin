@@ -1,9 +1,6 @@
-import { Line, Bar } from "react-chartjs-2";
 import { Chart } from "react-chartjs-2";
 import "chart.js/auto";
 import { DateTime } from "luxon";
-import { useRef, useEffect,useState } from "react";
-import { useReactTable, getCoreRowModel, flexRender } from "@tanstack/react-table";
 
 
 function formatTimeLabels(labels: string[]) {
@@ -387,71 +384,3 @@ export function CombinedBarLineForecastAndHistChartOperational({
 function adjustOpacity(rgbColor: string, alpha:number) {
   return rgbColor.replace("rgb", "rgba").replace(")", `, ${alpha})`);
 };
-
-const mockFetchData = () => {
-  return {
-    quarterHour: "14:15",
-    forecastedPrice: (Math.random() * 100).toFixed(2),
-    operationalDecision: Math.random() > 0.5 ? "Charge" : "Discharge",
-    avgChargePrice: (Math.random() * 50).toFixed(2),
-    avgDischargePrice: (Math.random() * 50 + 50).toFixed(2),
-  };
-};
-
-export function DynamicTable() {
-  const [data, setData] = useState([mockFetchData()]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setData([mockFetchData()]);
-    }, 15000); // Update every 15 seconds
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const columns = [
-    { accessorKey: "quarterHour", header: "Quarter Hour" },
-    { accessorKey: "forecastedPrice", header: "Forecasted Price (€)" },
-    { accessorKey: "operationalDecision", header: "Operational Decision" },
-    { accessorKey: "avgChargePrice", header: "Avg Charge Price (€/MWh)" },
-    { accessorKey: "avgDischargePrice", header: "Avg Discharge Price (€/MWh)" },
-  ];
-
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  });
-
-  return (
-    <div className="p-4 bg-white shadow-lg rounded-lg w-full max-w-2xl">
-      <h2 className="text-xl font-semibold mb-4 text-gray-700">Real-Time Forecast Data</h2>
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse rounded-lg overflow-hidden shadow-md">
-          <thead>
-            {table.getHeaderGroups().map(headerGroup => (
-              <tr key={headerGroup.id} className="bg-gray-800 text-white text-left">
-                {headerGroup.headers.map(header => (
-                  <th key={header.id} className="px-6 py-3">
-                    {flexRender(header.column.columnDef.header, header.getContext())}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map(row => (
-              <tr key={row.id} className="bg-gray-100 border-b text-center">
-                {row.getVisibleCells().map(cell => (
-                  <td key={cell.id} className="px-6 py-3">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}

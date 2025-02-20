@@ -4,10 +4,25 @@ interface BatteryProps {
   level: number;
 }
 
-
-function findAvgSpread(json: Record<string, any>,x:number,PERatio = 1/2) {
+function findRevenue(json: Record<string, any>, x: number, PERatio = 1 / 2) {
+  const lastEntries = sortEntriesAndReturnXlatest(json,x)
+  const dischargeRevenue =
+  lastEntries
+    .filter((entry) => entry.net_discharge > 0.1)
+    .reduce((acc, entry) => acc + entry.price * entry.net_discharge, 0)
+  return Math.round(dischargeRevenue)
+}
+function findCost(json: Record<string, any>, x: number, PERatio = 1 / 2) {
+  const lastEntries = sortEntriesAndReturnXlatest(json,x)
+  const chargeCost =
+  lastEntries
+    .filter((entry) => entry.net_discharge < 0.1)
+    .reduce((acc, entry) => acc + entry.price * entry.net_discharge, 0)
+  return Math.round(chargeCost)
+}
+function sortEntriesAndReturnXlatest(json: Record<string, any>, x: number){
   if (!json || typeof json !== "object") {
-    return [[], [], [], [], []]; // Return empty arrays to prevent errors
+    return [0, 0]; // Return zeros to prevent errors
   }
 
   const sortedEntries = Object.entries(json)
@@ -19,52 +34,73 @@ function findAvgSpread(json: Record<string, any>,x:number,PERatio = 1/2) {
     }))
     .sort((a, b) => a.id.getTime() - b.id.getTime());
 
-
   const lastXElements = (arr: any[], x: number) => arr.slice(-x);
   const lastEntries = lastXElements(sortedEntries, x);
+  return lastEntries
+} 
+function findNBCycles(json: Record<string, any>, x: number, PERatio = 1 / 2){
+  const lastEntries = sortEntriesAndReturnXlatest(json,x)
+  const nb_cycles =
+  (lastEntries.filter((entry) => entry.net_discharge > 0.1).length +
+    lastEntries.filter((entry) => entry.net_discharge < -0.1).length) /
+  (2 * 4) *
+  PERatio;
+  return nb_cycles
+}
+function findAvgSpread(json: Record<string, any>, x: number, PERatio = 1 / 2) {
+  const lastEntries = sortEntriesAndReturnXlatest(json,x)
 
-  const price = lastEntries.map((entry) => entry.price);
-  const net_discharge = lastEntries.map((entry) => entry.net_discharge);
-  const averagedischargeprice = lastEntries
-  .filter((entry) => entry.net_discharge > 0.1) // Filter for net discharge greater than 0 (charge)
-  .reduce((acc, entry) => acc + entry.price, 0.1) / lastEntries.filter((entry) => entry.net_discharge > 0.1).length;
+  const averagedischargeprice =
+    lastEntries
+      .filter((entry) => entry.net_discharge > 0.1)
+      .reduce((acc, entry) => acc + entry.price, 0) /
+    lastEntries.filter((entry) => entry.net_discharge > 0.1).length;
 
-  const averagechargeprice = lastEntries
-  .filter((entry) => entry.net_discharge < - 0.1) // Filter for net discharge greater than 0 (charge)
-  .reduce((acc, entry) => acc + entry.price, 0.1) / lastEntries.filter((entry) => entry.net_discharge < -0.1).length;
-
-  // const SI = lastEntries.map((entry) => entry.SI);
-  const nb_cycles = (lastEntries.filter((entry) => entry.net_discharge > 0.1).length + lastEntries.filter((entry) => entry.net_discharge < -0.1).length)/(2*4)*PERatio
-  return [Math.round((averagedischargeprice - averagechargeprice)), nb_cycles] as const;
+  const averagechargeprice =
+    lastEntries
+      .filter((entry) => entry.net_discharge < -0.1)
+      .reduce((acc, entry) => acc + entry.price, 0) /
+    lastEntries.filter((entry) => entry.net_discharge < -0.1).length;
+    
+  return Math.round(averagedischargeprice - averagechargeprice)
 }
 
-export function Battery({ level, currentQH, priceForecast, decision, lt_data }: BatteryProps & { currentQH: Date, priceForecast: number, decision: string,lt_data: [] }) {
-  console.log(currentQH)
+export function Battery({
+  level,
+  currentQH,
+  priceForecast,
+  decision,
+  lt_data,
+}: BatteryProps & {
+  currentQH: Date;
+  priceForecast: number;
+  decision: string;
+  lt_data: Record<string, any>;
+}) {
+  // console.log(currentQH);
   const levelPercentage = level * 50;
   const getColor = (levelPercentage: number) => {
     if (levelPercentage > 50) return "rgba(103, 190, 91, 0.75)";
     if (levelPercentage > 20) return "rgba(196, 123, 28, 0.75)";
     return "rgba(255, 0, 0, 0.75)";
   };
-  const avgSpreadLookback = [
-    { lookback: "6h", value: findAvgSpread(lt_data,24) },
-    { lookback: "1d", value:  findAvgSpread(lt_data,96) },
-    { lookback: "1w", value: findAvgSpread(lt_data,96*7) },
-  ];
-  // Example data structure for different lookbacks
-  const lookbacks = [24,96,96*7]
+
+  // Prepare lookback data
+  const lbs = [24,96,96*7]
   const lookbackData = [
-    { lookback: "6h", avgSpread: findAvgSpread(lt_data,lookbacks[0])[0], nbCycles: findAvgSpread(lt_data,lookbacks[0])[1] },
-    { lookback: "1d", avgSpread: findAvgSpread(lt_data,lookbacks[1])[0], nbCycles: findAvgSpread(lt_data,lookbacks[0])[1] },
-    { lookback: "7d", avgSpread: findAvgSpread(lt_data,lookbacks[2])[0], nbCycles: findAvgSpread(lt_data,lookbacks[0]*7)[1] },
+    { lookback: "6h", totalRevenue : findRevenue(lt_data,lbs[0]), totalCost : findCost(lt_data,lbs[0]), avgSpread: findAvgSpread(lt_data,lbs[0]), nbCycles: findNBCycles(lt_data, lbs[0]) },
+    { lookback: "1d",totalRevenue : findRevenue(lt_data,lbs[1]), totalCost : findCost(lt_data,lbs[1]),avgSpread: findAvgSpread(lt_data, lbs[1]), nbCycles: findNBCycles(lt_data, lbs[1]) },
+    { lookback: "7d",totalRevenue : findRevenue(lt_data,lbs[2]), totalCost : findCost(lt_data,lbs[2]),avgSpread: findAvgSpread(lt_data, lbs[2]), nbCycles: findNBCycles(lt_data, lbs[2]) },
   ];
+
+
   return (
     <div style={{ position: "relative", display: "inline-block" }}>
       {/* Battery Container */}
       <div
         style={{
-          width: "400px",
-          height: "600px",
+          width: "300px",
+          height: "450px",
           border: "6px solid black",
           borderRadius: "40px",
           position: "relative",
@@ -93,16 +129,16 @@ export function Battery({ level, currentQH, priceForecast, decision, lt_data }: 
             transform: "translate(-50%, -50%)",
             backgroundColor: "rgba(255, 255, 255, 0.8)",
             padding: "10px",
-            borderRadius: "10px",
+            borderRadius: "20px",
             textAlign: "center",
-            width: "80%",
+            width: "75%",
           }}
         >
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <tbody>
               <tr>
                 <td style={cellStyle}>Current quarter</td>
-                <td style={cellStyle}>{currentQH}</td>
+                <td style={cellStyle}>{currentQH.toLocaleString()}</td>
               </tr>
               <tr>
                 <td style={cellStyle}>Price forecast</td>
@@ -113,26 +149,54 @@ export function Battery({ level, currentQH, priceForecast, decision, lt_data }: 
                 <td style={cellStyle}>{decision}</td>
               </tr>
               <tr>
-              <td style={cellStyle}>
-              {lookbackData.map(({ lookback }) => (
-                      <tr key={lookback}>
-                        <td style={cellStyleSmall}>{lookback}</td>
+                <td style={cellStyle} colSpan={2}>
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr>
+                        <th style={cellStyleSmall}></th>
+                        {lookbackData.map(({ lookback }) => (
+                          <th style={cellStyleSmall} key={lookback}>
+                            {lookback}
+                          </th>
+                        ))}
                       </tr>
-            ))}
-              </td>
-              <td style={cellStyle}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <tbody>
-                    {lookbackData.map(({ lookback, avgSpread,nbCycles }) => (
-                      <tr key={lookback}>
-                        <td style={cellStyleSmall}>{avgSpread}</td>
-                        <td style={cellStyleSmall}>{nbCycles}</td>
-
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <td style={cellStyleSmall}>Revenue</td>
+                        {lookbackData.map(({ lookback, totalRevenue }) => (
+                          <td style={cellStyleSmall} key={lookback}>
+                            {totalRevenue}
+                          </td>
+                        ))}
                       </tr>
-            ))}
-          </tbody>
-        </table>
-      </td>
+                      <tr>
+                        <td style={cellStyleSmall}>Cost</td>
+                        {lookbackData.map(({ lookback, totalCost }) => (
+                          <td style={cellStyleSmall} key={lookback}>
+                            {totalCost}
+                          </td>
+                        ))}
+                      </tr>
+                      <tr>
+                        <td style={cellStyleSmall}> Price Spread</td>
+                        {lookbackData.map(({ lookback, avgSpread }) => (
+                          <td style={cellStyleSmall} key={lookback}>
+                            {avgSpread}
+                          </td>
+                        ))}
+                      </tr>
+                      <tr>
+                        <td style={cellStyleSmall}># Cycles</td>
+                        {lookbackData.map(({ lookback, nbCycles }) => (
+                          <td style={cellStyleSmall} key={lookback}>
+                            {nbCycles}
+                          </td>
+                        ))}
+                      </tr>
+                    </tbody>
+                  </table>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -163,9 +227,10 @@ const cellStyle: React.CSSProperties = {
   textAlign: "left",
   fontWeight: "bold",
 };
+
 const cellStyleSmall: React.CSSProperties = {
   padding: "4px",
-  borderBottom: "1px solid #ccc",
-  textAlign: "left",
+  border: "1px solid #ccc",
+  textAlign: "center",
   fontSize: "12px",
 };

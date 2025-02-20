@@ -45,7 +45,7 @@ function findNBCycles(json: Record<string, any>, x: number, PERatio = 1 / 2){
     lastEntries.filter((entry) => entry.net_discharge < -0.1).length) /
   (2 * 4) *
   PERatio;
-  return nb_cycles
+  return nb_cycles.toFixed(2)
 }
 function findAvgSpread(json: Record<string, any>, x: number, PERatio = 1 / 2) {
   const lastEntries = sortEntriesAndReturnXlatest(json,x)
@@ -86,11 +86,11 @@ export function Battery({
   };
 
   // Prepare lookback data
-  const lbs = [24,96,96*7]
+  const lbs = [3*4,6*4,24*4]
   const lookbackData = [
-    { lookback: "6h", totalRevenue : findRevenue(lt_data,lbs[0]), totalCost : findCost(lt_data,lbs[0]), avgSpread: findAvgSpread(lt_data,lbs[0]), nbCycles: findNBCycles(lt_data, lbs[0]) },
-    { lookback: "1d",totalRevenue : findRevenue(lt_data,lbs[1]), totalCost : findCost(lt_data,lbs[1]),avgSpread: findAvgSpread(lt_data, lbs[1]), nbCycles: findNBCycles(lt_data, lbs[1]) },
-    { lookback: "7d",totalRevenue : findRevenue(lt_data,lbs[2]), totalCost : findCost(lt_data,lbs[2]),avgSpread: findAvgSpread(lt_data, lbs[2]), nbCycles: findNBCycles(lt_data, lbs[2]) },
+    { lookback: "3h", totalRevenue : findRevenue(lt_data,lbs[0]), totalCost : findCost(lt_data,lbs[0]), avgSpread: findAvgSpread(lt_data,lbs[0]), nbCycles: findNBCycles(lt_data, lbs[0]) },
+    { lookback: "6d",totalRevenue : findRevenue(lt_data,lbs[1]), totalCost : findCost(lt_data,lbs[1]),avgSpread: findAvgSpread(lt_data, lbs[1]), nbCycles: findNBCycles(lt_data, lbs[1]) },
+    { lookback: "1d",totalRevenue : findRevenue(lt_data,lbs[2]), totalCost : findCost(lt_data,lbs[2]),avgSpread: findAvgSpread(lt_data, lbs[2]), nbCycles: findNBCycles(lt_data, lbs[2]) },
   ];
 
 
@@ -142,7 +142,7 @@ export function Battery({
               </tr>
               <tr>
                 <td style={cellStyle}>Price forecast</td>
-                <td style={cellStyle}>{priceForecast}</td>
+                <td style={cellStyle}>{priceForecast} (€/MWh) </td>
               </tr>
               <tr>
                 <td style={cellStyle}>Decision</td>
@@ -163,7 +163,7 @@ export function Battery({
                     </thead>
                     <tbody>
                     <tr>
-                        <td style={cellStyleSmall}>Revenue</td>
+                        <td style={cellStyleSmall}>Revenue (€)</td>
                         {lookbackData.map(({ lookback, totalRevenue }) => (
                           <td style={cellStyleSmall} key={lookback}>
                             {totalRevenue}
@@ -179,7 +179,7 @@ export function Battery({
                         ))}
                       </tr>
                       <tr>
-                        <td style={cellStyleSmall}> Price Spread</td>
+                        <td style={cellStyleSmall}> Price Spread (€/MWh)</td>
                         {lookbackData.map(({ lookback, avgSpread }) => (
                           <td style={cellStyleSmall} key={lookback}>
                             {avgSpread}

@@ -18,7 +18,7 @@ export function splitAndSortLTSData(json: Record<string, any>) {
     .sort((a, b) => a.id.getTime() - b.id.getTime());
 
   const lastXElements = (arr: any[], x: number) => arr.slice(-x);
-  const x = 48;
+  const x = 26;
   const lastEntries = lastXElements(sortedEntries, x);
 
   const labels = lastEntries.map((entry) => entry.id.toISOString());

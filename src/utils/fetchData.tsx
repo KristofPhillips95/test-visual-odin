@@ -1,4 +1,4 @@
-export async function fetchAsJson(lts: Boolean) {
+export async function fetchAsJson(lts: boolean) {
   if (lts) {
     try {
         const response = await fetch(

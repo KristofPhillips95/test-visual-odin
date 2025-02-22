@@ -11,44 +11,44 @@ function formatTimeLabels(labels: string[]) {
       .toFormat("HH:mm")
   );
 }
-function shadedFCDatasets(
-  quantiles: number[],
-  shadedData1: number[][],
-  historicalLength: number
-) {
-  const groupLabel = "SI Forecast Uncertainty";
-  // Create quantile datasets (these won't have their own legend entry)
-  const shadedDatasets = quantiles.slice(0, -1).map((q, i) => ({
-    type: "line",
-    label: "", // No individual label
-    group: groupLabel, // Add a custom group property
-    data: Array(historicalLength).fill(null).concat(shadedData1[i]),
-    borderColor: "rgba(0, 0, 0, 0)",
-    // Adjust opacity scaling as desired
-    backgroundColor: `rgba(0, 0, 255, ${1.5 * (quantiles[i + 1] - quantiles[i])})`,
-    fill: "-1", // Fill toward the next dataset
-    yAxisID: "y2",
-    hidden: false,
-    pointRadius: 0,      // Remove the dots
-    pointHoverRadius: 0, // Remove hover dots
-  }));
+// function shadedFCDatasets(
+//   quantiles: number[],
+//   shadedData1: number[][],
+//   historicalLength: number
+// ) {
+//   const groupLabel = "SI Forecast Uncertainty";
+//   // Create quantile datasets (these won't have their own legend entry)
+//   const shadedDatasets = quantiles.slice(0, -1).map((q, i) => ({
+//     type: "line",
+//     label: "", // No individual label
+//     group: groupLabel, // Add a custom group property
+//     data: Array(historicalLength).fill(null).concat(shadedData1[i]),
+//     borderColor: "rgba(0, 0, 0, 0)",
+//     // Adjust opacity scaling as desired
+//     backgroundColor: `rgba(0, 0, 255, ${1.5 * (quantiles[i + 1] - quantiles[i])})`,
+//     fill: "-1", // Fill toward the next dataset
+//     yAxisID: "y2",
+//     hidden: false,
+//     pointRadius: 0,      // Remove the dots
+//     pointHoverRadius: 0, // Remove hover dots
+//   }));
 
-  // Create a dummy dataset for the legend (this is the one that appears in the legend)
-  const legendDataset = {
-    type: "line",
-    label: groupLabel,
-    group: groupLabel,
-    data: Array(historicalLength).fill(null), // No actual data plotted
-    borderColor: "rgba(0, 0, 0, 0)",
-    backgroundColor: "rgba(0, 0, 255, 0.3)",
-    fill: true,
-    yAxisID: "y2",
-    hidden: false,
-  };
+//   // Create a dummy dataset for the legend (this is the one that appears in the legend)
+//   const legendDataset = {
+//     type: "line",
+//     label: groupLabel,
+//     group: groupLabel,
+//     data: Array(historicalLength).fill(null), // No actual data plotted
+//     borderColor: "rgba(0, 0, 0, 0)",
+//     backgroundColor: "rgba(0, 0, 255, 0.3)",
+//     fill: true,
+//     yAxisID: "y2",
+//     hidden: false,
+//   };
 
-  // Return the legend dataset first, then all the quantile datasets.
-  return [legendDataset, ...shadedDatasets];
-}
+//   // Return the legend dataset first, then all the quantile datasets.
+//   return [legendDataset, ...shadedDatasets];
+// }
 
 function shadedFCBarDatasets(
   quantiles: number[],

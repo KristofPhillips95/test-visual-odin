@@ -1,7 +1,7 @@
 import { Chart } from "react-chartjs-2";
 import "chart.js/auto";
 import { DateTime } from "luxon";
-
+import {ChartData,ChartDataset,ChartOptions} from "chart.js"
 
 function formatTimeLabels(labels: string[]) {
   // Convert UTC timestamps to Europe/Brussels and format them
@@ -155,7 +155,7 @@ export function CombinedBarLineForecastAndHistChart_2({
   
   const datasetsHist = [
     {
-      type: "line",
+      type: "line" as const,
       label: price_label,
       data: lineData,
       borderColor: price_color,
@@ -163,7 +163,7 @@ export function CombinedBarLineForecastAndHistChart_2({
       yAxisID: "y1",
     },
     {
-      type: "line",
+      type: "line" as const,
       label: "Imbalance price forecast",
       data: new Array(lineData.length).fill(null).concat(lineDataFc),
       borderColor: adjustOpacity(price_color,0.6),
@@ -171,7 +171,7 @@ export function CombinedBarLineForecastAndHistChart_2({
       yAxisID: "y1",
     },
     {
-      type: "bar",
+      type: "bar" as const,
       label: si_label,
       data: barData,
       backgroundColor: si_color,
@@ -188,12 +188,12 @@ export function CombinedBarLineForecastAndHistChart_2({
     lineData.length,
     si_color
   );
-  const chartData = {
+  const chartData:ChartData<"bar"| "line"> = {
     labels: formattedLabels,
-    datasets: [...datasetsHist, ...shadedForecastchartDatasets],
+    datasets: [...datasetsHist, ...shadedForecastchartDatasets] as ChartDataset<"bar" | "line">[],
   };
 
-  const options = {
+  const options: ChartOptions = {
     responsive: true,
     scales: {
       x: {
@@ -339,12 +339,12 @@ export function CombinedBarLineForecastAndHistChartOperational({
     },
   ];
 
-  const chartData = {
+  const chartData:ChartData<"bar"| "line">  = {
     labels: formattedLabels,
-    datasets: datasetsHist,
+    datasets: datasetsHist as ChartDataset<"bar"| "line">[],
   };
 
-  const options = {
+  const options: ChartOptions = {
     responsive: true,
     scales: {
       x: {

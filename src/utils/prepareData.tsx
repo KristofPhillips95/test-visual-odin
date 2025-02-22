@@ -236,17 +236,17 @@ export function splitAndSortSTData(stData: StDataEntry[]) {
  * @param obj The dictionary with date-string keys.
  * @returns The value corresponding to the earliest key, or NaN if invalid.
  */
-function getEarliestValue(obj: Record<string, string> | undefined): number {
-  if (!obj || typeof obj !== "object") {
-    return NaN;
-  }
+// function getEarliestValue(obj: Record<string, string> | undefined): number {
+//   if (!obj || typeof obj !== "object") {
+//     return NaN;
+//   }
 
-  const validDates = Object.keys(obj)
-    .map((key) => ({ key, date: new Date(key) }))
-    .filter(({ date }) => !isNaN(date.getTime())) // Ensure valid dates
-    .sort((a, b) => a.date.getTime() - b.date.getTime());
+//   const validDates = Object.keys(obj)
+//     .map((key) => ({ key, date: new Date(key) }))
+//     .filter(({ date }) => !isNaN(date.getTime())) // Ensure valid dates
+//     .sort((a, b) => a.date.getTime() - b.date.getTime());
 
-  if (validDates.length === 0) return NaN;
+//   if (validDates.length === 0) return NaN;
 
-  return parseFloat(obj[validDates[0].key]) || NaN;
-}
+//   return parseFloat(obj[validDates[0].key]) || NaN;
+// }

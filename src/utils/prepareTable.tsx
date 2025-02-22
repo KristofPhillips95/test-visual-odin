@@ -89,7 +89,7 @@ export function Battery({
   const lbs = [3*4,6*4,24*4]
   const lookbackData = [
     { lookback: "3h", totalRevenue : findRevenue(lt_data,lbs[0]), totalCost : findCost(lt_data,lbs[0]), avgSpread: findAvgSpread(lt_data,lbs[0]), nbCycles: findNBCycles(lt_data, lbs[0]) },
-    { lookback: "6d",totalRevenue : findRevenue(lt_data,lbs[1]), totalCost : findCost(lt_data,lbs[1]),avgSpread: findAvgSpread(lt_data, lbs[1]), nbCycles: findNBCycles(lt_data, lbs[1]) },
+    { lookback: "6h",totalRevenue : findRevenue(lt_data,lbs[1]), totalCost : findCost(lt_data,lbs[1]),avgSpread: findAvgSpread(lt_data, lbs[1]), nbCycles: findNBCycles(lt_data, lbs[1]) },
     { lookback: "1d",totalRevenue : findRevenue(lt_data,lbs[2]), totalCost : findCost(lt_data,lbs[2]),avgSpread: findAvgSpread(lt_data, lbs[2]), nbCycles: findNBCycles(lt_data, lbs[2]) },
   ];
 
@@ -163,7 +163,7 @@ export function Battery({
                     </thead>
                     <tbody>
                     <tr>
-                        <td style={cellStyleSmall}>Revenue (€)</td>
+                        <td style={cellStyleSmall}>Discharge Revenue (€)</td>
                         {lookbackData.map(({ lookback, totalRevenue }) => (
                           <td style={cellStyleSmall} key={lookback}>
                             {totalRevenue}
@@ -171,10 +171,10 @@ export function Battery({
                         ))}
                       </tr>
                       <tr>
-                        <td style={cellStyleSmall}>Cost</td>
+                        <td style={cellStyleSmall}>Charging Cost (€)</td>
                         {lookbackData.map(({ lookback, totalCost }) => (
                           <td style={cellStyleSmall} key={lookback}>
-                            {totalCost}
+                            {-totalCost}
                           </td>
                         ))}
                       </tr>

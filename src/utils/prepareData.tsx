@@ -187,7 +187,7 @@ export function filterShortTermData(stData: StDataEntry[], ltData: LtDataEntry[]
 
   // Calculate the threshold time (maxLtId minus one quarter-hour)
   const maxLtDate = new Date(maxLtId);
-  const thresholdTime = new Date(maxLtDate.getTime() - 15 * 60 * 1000); // Subtract 15 minutes
+  const thresholdTime = new Date(maxLtDate.getTime()) // - 15 * 60 * 1000); // Subtract 15 minutes
 
   // Filter short-term data for ids greater than or equal to the threshold time
   return stData.filter(entry => new Date(entry.id) >= thresholdTime);

@@ -1,6 +1,6 @@
-export function splitAndSortLTSData(json: []) {
+export function splitAndSortLTSData(json: Record<string, any>): [string[], number[], number[], number[], number[], number[], number[]] {
   if (!json || typeof json !== "object") {
-    return [[], [], [], [], []]; // Return empty arrays to prevent errors
+    return [[], [], [], [], [], [], []]; // Return empty arrays to prevent errors
   }
 
   const sortedEntries = Object.entries(json)
@@ -27,9 +27,9 @@ export function splitAndSortLTSData(json: []) {
   const net_discharge = lastEntries.map((entry) => entry.net_discharge);
   const soc = lastEntries.map((entry) => entry.soc);
 
-
-  return [labels, price, SI, net_discharge,soc, charge, discharge,] as const;
+  return [labels, price, SI, net_discharge, soc, charge, discharge];
 }
+
 
 export function findLatestEntryst(json: []){
   if (!json || typeof json !== "object"|| Object.keys(json).length === 0) {

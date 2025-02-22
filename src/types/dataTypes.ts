@@ -17,6 +17,7 @@ export interface LtDataEntry {
     SI?: number;
     Imb_price?: number;
     fw_d?:  Record<string,number>;
+    fw_c?:  Record<string,number>;
     fw_net_discharge?:  Record<string,number>;
     fw_soc?: Record<string,number>;
     pred_imb_price_fc?: Record<string,number[]>;

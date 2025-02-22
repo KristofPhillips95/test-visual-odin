@@ -13,7 +13,7 @@ function findRevenue(json: LtDataEntry[], x: number) {
     .reduce((acc, entry) => acc + entry.price * entry.net_discharge, 0)
   return Math.round(dischargeRevenue)
 }
-function findCost(json: Record<string, number>[], x: number) {
+function findCost(json: LtDataEntry[], x: number) {
   const lastEntries = sortEntriesAndReturnXlatest(json,x)
   const chargeCost =
   lastEntries
@@ -72,10 +72,10 @@ export function Battery({
   decision,
   lt_data,
 }: BatteryProps & {
-  currentQH: Date;
+  currentQH: string;
   priceForecast: number;
   decision: string;
-  lt_data: Record<string, number>[];
+  lt_data: LtDataEntry[];
 }) {
   // console.log(currentQH);
   const levelPercentage = level * 50;

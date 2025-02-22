@@ -80,10 +80,25 @@ export function findLatestEntry(json: LtDataEntry[]) {
 
   return latestEntry;
 }
-export function splitStEntry(entry: StDataEntry) {
+function getSortedValuesDictTsToArr(tsBasedDict: Record<string, number>): number[] {
+  if (!tsBasedDict || typeof tsBasedDict !== "object") {
+    return [];
+  }
+
+  return Object.entries(tsBasedDict)
+    .map(([timestamp, value]) => ({
+      date: new Date(timestamp),
+      value: value ?? NaN,
+    }))
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
+    .map(entry => entry.value);
+}
+
+// Function to extract values based on sorted keys
+export function splitStEntry(entry: StDataEntry):[Date[],number[],number[][],number[],number[],number[]] {
   // If entry is missing or invalid, return empty arrays to avoid errors
   if (!entry) {
-    return [[], [], [], []] as const;
+    return [[], [], [], [], [], []] as const;
   }
 
   // Extract values from the entry, or use empty defaults if missing
@@ -178,20 +193,21 @@ export function filterShortTermData(stData: StDataEntry[], ltData: LtDataEntry[]
   return stData.filter(entry => new Date(entry.id) >= thresholdTime);
 }
 
-export function splitAndSortSTData(stData: StDataEntry) {
+export function splitAndSortSTData(stData: StDataEntry[]) {
   if (!Array.isArray(stData)) {
     return [[], [], [], [], [], [], []] as const;
   }
+  
 
   const sortedEntries = stData
     .map((value) => ({
       id: value?.id ? new Date(value.id) : new Date(0),
-      price: parseFloat(value?.Imb_price) || NaN,
-      fw_charge: getEarliestValue(value?.fw_c),
-      fw_discharge: getEarliestValue(value?.fw_d),
-      fw_net_discharge: getEarliestValue(value?.fw_net_discharge),
-      fw_soc: getEarliestValue(value?.fw_soc),
-      SI: parseFloat(value?.SI) || NaN,
+      price: value?.Imb_price || NaN,
+      fw_charge: value?.fw_c,
+      fw_discharge: value?.fw_d,
+      fw_net_discharge: value?.fw_net_discharge,
+      fw_soc: value?.fw_soc,
+      SI: value?.SI || NaN,
     }))
     .sort((a, b) => a.id.getTime() - b.id.getTime());
 
@@ -199,10 +215,11 @@ export function splitAndSortSTData(stData: StDataEntry) {
   const price = sortedEntries.map((entry) => entry.price);
   const SI = sortedEntries.map((entry) => entry.SI);
   const fw_charge = sortedEntries.map((entry) => entry.fw_charge);
-  const fw_soc = sortedEntries.map((entry) => entry.fw_soc);
+  const fw_soc = sortedEntries.map((entry) => getSortedValuesDictTsToArr(entry.fw_soc)[0]);
   const fw_discharge = sortedEntries.map((entry) => entry.fw_discharge);
-  const fw_net_discharge = sortedEntries.map((entry) => entry.fw_net_discharge);
-
+  const fw_net_discharge = sortedEntries.map((entry) => getSortedValuesDictTsToArr(entry.fw_net_discharge)[0]);
+  
+  console.log(fw_net_discharge)
   return [
     labels.slice(1),
     price.slice(1),

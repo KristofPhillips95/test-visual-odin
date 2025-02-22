@@ -275,11 +275,11 @@ export function CombinedBarLineForecastAndHistChartOperational({
 }: {
   title: string;
   x_labels: string[];
-  x_labels_fc: string[];
+  x_labels_fc: string[]|Date[];
   lineData: number[];
   lineDataFc: number[];
   barData: number[];
-  shadedData1: number[][]; // each element is a time series (for one quantile band)
+  shadedData1: number[]; // each element is a time series (for one quantile band)
   price_label: string;
   si_label: string;
   soc_color: string;

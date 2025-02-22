@@ -64,8 +64,8 @@ export default function Home() {
 
 
   const stNeeded = filterShortTermData(st_data,lt_data)
-  const [labelsLTMissing, priceMissing,SIMissing,netDischargeMissing,socMissing] = splitAndSortSTData(stNeeded || {});
-  // console.log(priceMissing)
+  const [labelsLTMissing, priceMissing,SIMissing,netDischargeMissing,socMissing] = splitAndSortSTData(stNeeded || []);
+  console.log(labelsLTMissing)
 
   const decision = net_dc_fc[0] > 0.01 ? "Discharge" : net_dc_fc[0] < -0.01 ? "Charge" : "Wait";
   const battery_level  = soc_fc?.[0] ?? 0;

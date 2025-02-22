@@ -219,7 +219,7 @@ export function CombinedBarLineForecastAndHistChart_2({
     plugins: {
       legend: {
         labels: {
-          filter: (legendItem, chartData) => {
+          filter: (legendItem) => {
             // Only include legend items that have a non-empty label.
             return legendItem.text !== "";
           },

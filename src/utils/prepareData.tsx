@@ -1,5 +1,3 @@
-import { Sorts_Mill_Goudy } from "next/font/google";
-
 export function splitAndSortLTSData(json: Record<string, any>) {
   if (!json || typeof json !== "object") {
     return [[], [], [], [], []]; // Return empty arrays to prevent errors

@@ -9,11 +9,11 @@ import {Battery} from "../utils/prepareTable";
 
 
 export default function Home() {
-  const [lt_data, setLtData] = useState<Record<string, any> | null>(null);
+  const [lt_data, setLtData] = useState<Record<string, []> | null>(null);
   const [loadingLT, setLoadingLT] = useState(true);
   const [loadingST, setLoadingST] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [st_data,set_st_data] = useState<Record<string, any> | null>(null);
+  const [st_data,set_st_data] = useState<Record<string, []> | null>(null);
 
   useEffect(() => {
     const fetchLTData = () => {
@@ -75,7 +75,7 @@ export default function Home() {
   const thisQHPrice = Math.round(price_fc?.[0] ?? 0);
   return (
     <div className="p-8">
-      {loadingLT && <p>Loading...</p>}
+      {(loadingLT || loadingST) && <p>Loading...</p>}
       {error && <p className="text-red-500">Error: {error}</p>}
   
       {/* Flexbox for Side-by-Side Layout */}

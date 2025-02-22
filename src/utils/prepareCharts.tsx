@@ -1,7 +1,7 @@
 import { Chart } from "react-chartjs-2";
 import "chart.js/auto";
 import { DateTime } from "luxon";
-import {ChartData,ChartDataset,ChartOptions} from "chart.js"
+import {ChartData,ChartDataset,ChartOptions, ChartTypeRegistry} from "chart.js"
 
 function formatTimeLabels(labels: string[]) {
   // Convert UTC timestamps to Europe/Brussels and format them
@@ -87,7 +87,7 @@ function shadedFCBarDatasets(
       barPercentage: 1,
       categoryPercentage: 1,
       barThickness: 5,
-    };
+    } as CustomChartDataset<"bar">;
   });
 
   // Create a dummy dataset that will serve as the single legend item:
@@ -153,7 +153,7 @@ export function CombinedBarLineForecastAndHistChart_2({
 
 
   
-  const datasetsHist = [
+    const datasetsHist: CustomChartDataset<"bar" | "line">[] = [
     {
       type: "line" as const,
       label: price_label,
@@ -190,7 +190,7 @@ export function CombinedBarLineForecastAndHistChart_2({
   );
   const chartData:ChartData<"bar"| "line"> = {
     labels: formattedLabels,
-    datasets: [...datasetsHist, ...shadedForecastchartDatasets] as ChartDataset<"bar" | "line">[],
+    datasets: [...datasetsHist, ...shadedForecastchartDatasets] as CustomChartDataset<"bar" | "line">[],
   };
 
   const options: ChartOptions = {
@@ -228,17 +228,18 @@ export function CombinedBarLineForecastAndHistChart_2({
         onClick: function (e, legendItem, legend) {
           const chart = legend.chart;
           const dsIndex = legendItem.datasetIndex;
-          const ds = chart.data.datasets[dsIndex];
+          const ds = chart.data.datasets[dsIndex] as CustomChartDataset<"bar"|"line">;
           const meta = chart.getDatasetMeta(dsIndex);
         
           // If the dataset doesn't belong to a group, toggle it normally.
           if (!ds.group) {
-            meta.hidden = meta.hidden === null ? !chart.data.datasets[dsIndex].hidden : !meta.hidden;
+            meta.hidden = meta.hidden === null ? !chart.data.datasets[dsIndex].hidden  : !meta.hidden;
           } else {
             // For grouped datasets, toggle every dataset in the same group.
             const groupLabel = ds.group;
             chart.data.datasets.forEach((dataset, index) => {
-              if (dataset.group === groupLabel) {
+              const datasetWithGroup = dataset as Partial<CustomChartDataset<"bar" | "line">>;
+              if (datasetWithGroup.group === groupLabel) {
                 const datasetMeta = chart.getDatasetMeta(index);
                 datasetMeta.hidden = datasetMeta.hidden === null
                   ? !chart.data.datasets[index].hidden
@@ -259,6 +260,10 @@ export function CombinedBarLineForecastAndHistChart_2({
     </div>
   );
 }
+
+type CustomChartDataset<T extends keyof ChartTypeRegistry> = ChartDataset<T> & {
+  group?: string;
+};
 
 export function CombinedBarLineForecastAndHistChartOperational({
   title,

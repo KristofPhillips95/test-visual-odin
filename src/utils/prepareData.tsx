@@ -1,5 +1,4 @@
-export function splitAndSortLTSData(json: Record<string, any>) { // eslint-disable-next-line @typescript-eslint/no-explicit-any
-
+export function splitAndSortLTSData(json: Record<string, any>) {
   if (!json || typeof json !== "object") {
     return [[], [], [], [], []]; // Return empty arrays to prevent errors
   }
@@ -16,8 +15,7 @@ export function splitAndSortLTSData(json: Record<string, any>) { // eslint-disab
     }))
     .sort((a, b) => a.id.getTime() - b.id.getTime());
 
-  const lastXElements = (arr: any[], x: number) => arr.slice(-x); // eslint-disable-next-line @typescript-eslint/no-explicit-any
-
+  const lastXElements = (arr: [], x: number) => arr.slice(-x);
   const x = 26;
   const lastEntries = lastXElements(sortedEntries, x);
 
@@ -33,15 +31,13 @@ export function splitAndSortLTSData(json: Record<string, any>) { // eslint-disab
   return [labels, price, SI, net_discharge,soc, charge, discharge,] as const;
 }
 
-export function findLatestEntryst(json: Record<string,any>){// eslint-disable-next-line @typescript-eslint/no-explicit-any
-
+export function findLatestEntryst(json: Record<string,any>){
   if (!json || typeof json !== "object"|| Object.keys(json).length === 0) {
     return [[], [], [], [], []]; // Return empty arrays to prevent errors
   }
 
   // Function to find lowest lookahead timstamp in  a single entry 
-  const find_min_la = (st_entry: any) => {// eslint-disable-next-line @typescript-eslint/no-explicit-any
-
+  const find_min_la = (st_entry: any) => {
     // console.log("lookahead_timesteps:", st_entry.lookahead_timesteps);
     // console.log("Type:", typeof st_entry.lookahead_timesteps);
     // console.log("Is Array?", Array.isArray(st_entry.lookahead_timesteps));
@@ -66,8 +62,7 @@ export function findLatestEntryst(json: Record<string,any>){// eslint-disable-ne
   return json[lowestLaEntry.id]
 }
 
-export function findLatestEntry(json: Record<string, any>) {// eslint-disable-next-line @typescript-eslint/no-explicit-any
-
+export function findLatestEntry(json: Record<string, any>) {
   if (!json || typeof json !== "object" || Object.keys(json).length === 0) {
     return null; // Return null instead of empty arrays for clarity
   }
@@ -84,8 +79,7 @@ export function findLatestEntry(json: Record<string, any>) {// eslint-disable-ne
 
   return latestEntry;
 }
-export function splitStEntry(entry: Record<string, any>) {// eslint-disable-next-line @typescript-eslint/no-explicit-any
-
+export function splitStEntry(entry: Record<string, any>) {
   // If entry is missing or invalid, return empty arrays to avoid errors
   if (!entry) {
     return [[], [], [], []] as const;
@@ -102,20 +96,17 @@ export function splitStEntry(entry: Record<string, any>) {// eslint-disable-next
   }
 
   // Function to extract values based on sorted keys
-  const get_sorted_values = (data?: Record<string, any>): any[] => // eslint-disable-next-line @typescript-eslint/no-explicit-any
-
+  const get_sorted_values = (data?: Record<string, any>): any[] =>
     data && typeof data === "object"
       ? sorted_keys.map((key) => data[key])
       : [];
   
-  const get_sorted_values_price = (data?: Record<string, any>): any[] =>// eslint-disable-next-line @typescript-eslint/no-explicit-any
-
+  const get_sorted_values_price = (data?: Record<string, any>): any[] =>
     data && typeof data === "object"
       ? sorted_keys.map((key) => data[key])
       : [];
   
-  const get_sorted_values_si = (data?: Record<string, any>): number[][] =>// eslint-disable-next-line @typescript-eslint/no-explicit-any
-
+  const get_sorted_values_si = (data?: Record<string, any>): number[][] =>
     data && typeof data === "object"
       ? sorted_keys.map((key) => data[key] as number[])
       : [];

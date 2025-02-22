@@ -6,14 +6,14 @@ import "chart.js/auto";
 import {CombinedBarLineForecastAndHistChart_2,CombinedBarLineForecastAndHistChartOperational} from "../utils/prepareCharts";
 import {splitAndSortLTSData,findLatestEntryst,splitStEntry,filterShortTermData,splitAndSortSTData} from "../utils/prepareData";
 import {Battery} from "../utils/prepareTable";
-
+import {StDataEntry,LtDataEntry} from "../types/dataTypes"
 
 export default function Home() {
-  const [lt_data, setLtData] = useState<Record<string, []> | null>(null);
+  const [lt_data, setLtData] = useState<LtDataEntry[] | null>(null);
   const [loadingLT, setLoadingLT] = useState(true);
   const [loadingST, setLoadingST] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [st_data,set_st_data] = useState<Record<string, []> | null>(null);
+  const [st_data,set_st_data] = useState<StDataEntry[] | null>(null);
 
   useEffect(() => {
     const fetchLTData = () => {
@@ -57,9 +57,9 @@ export default function Home() {
   
 
 
-  const [labelsLT, price,SI,netDischarge,soc] = splitAndSortLTSData(lt_data || {});
+  const [labelsLT, price,SI,netDischarge,soc] = splitAndSortLTSData(lt_data || []);
   
-  const latestEntryST = findLatestEntryst(st_data || {} )
+  const latestEntryST = findLatestEntryst(st_data || [] )
   const [labels_fc,price_fc,si_fc,net_dc_fc,soc_fc,quantiles] = splitStEntry(latestEntryST)
 
 

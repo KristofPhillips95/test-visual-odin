@@ -1,21 +1,22 @@
-export function splitAndSortLTSData(json: Record<string, any>): [string[], number[], number[], number[], number[], number[], number[]] {
-  if (!json || typeof json !== "object") {
-    return [[], [], [], [], [], [], []]; // Return empty arrays to prevent errors
-  }
+import {StDataEntry,LtDataEntry} from "../types/dataTypes"
 
+export function splitAndSortLTSData(json: LtDataEntry[]): [string[], number[], number[], number[], number[], number[], number[]] {
+  if (!Array.isArray(json)) {
+    return [[], [], [], [], [], [], []]; // Ensure type consistency
+  }
   const sortedEntries = Object.entries(json)
     .map(([, value]) => ({
       id: value?.id ? new Date(value.id) : new Date(0),
-      price: parseFloat(value?.Imb_price) || NaN,
-      charge: parseFloat(value?.fw_c) || NaN,
-      discharge: parseFloat(value?.fw_d) || NaN,
-      net_discharge: parseFloat(value?.fw_net_discharge) || NaN,
-      soc: parseFloat(value?.fw_soc) || NaN,
-      SI: parseFloat(value?.SI) || NaN,
+      price: value?.Imb_price || NaN,
+      charge: value?.fw_c || NaN,
+      discharge: value?.fw_d || NaN,
+      net_discharge: value?.fw_net_discharge || NaN,
+      soc: value?.fw_soc || NaN,
+      SI: value?.SI || NaN,
     }))
     .sort((a, b) => a.id.getTime() - b.id.getTime());
 
-  const lastXElements = (arr: [], x: number) => arr.slice(-x);
+  const lastXElements = (arr: typeof sortedEntries, x: number) => arr.slice(-x);
   const x = 26;
   const lastEntries = lastXElements(sortedEntries, x);
 
@@ -31,13 +32,13 @@ export function splitAndSortLTSData(json: Record<string, any>): [string[], numbe
 }
 
 
-export function findLatestEntryst(json: []){
+export function findLatestEntryst(json: StDataEntry[]){
   if (!json || typeof json !== "object"|| Object.keys(json).length === 0) {
     return [[], [], [], [], []]; // Return empty arrays to prevent errors
   }
 
   // Function to find lowest lookahead timstamp in  a single entry 
-  const find_min_la = (st_entry: Record<string,[]>) => {
+  const find_min_la = (st_entry: StDataEntry) => {
     // console.log("lookahead_timesteps:", st_entry.lookahead_timesteps);
     // console.log("Type:", typeof st_entry.lookahead_timesteps);
     // console.log("Is Array?", Array.isArray(st_entry.lookahead_timesteps));
@@ -62,7 +63,7 @@ export function findLatestEntryst(json: []){
   return json[lowestLaEntry.id]
 }
 
-export function findLatestEntry(json: []) {
+export function findLatestEntry(json: LtDataEntry[]) {
   if (!json || typeof json !== "object" || Object.keys(json).length === 0) {
     return null; // Return null instead of empty arrays for clarity
   }
@@ -79,7 +80,7 @@ export function findLatestEntry(json: []) {
 
   return latestEntry;
 }
-export function splitStEntry(entry: Record<string, Record<string,number>>) {
+export function splitStEntry(entry: StDataEntry) {
   // If entry is missing or invalid, return empty arrays to avoid errors
   if (!entry) {
     return [[], [], [], []] as const;
@@ -101,12 +102,12 @@ export function splitStEntry(entry: Record<string, Record<string,number>>) {
       ? sorted_keys.map((key) => data[key])
       : [];
   
-  const get_sorted_values_price = (data?: Record<string, number>): number[] =>
+  const get_sorted_values_price = (data?: Record<string, number[]>): number[] =>
     data && typeof data === "object"
-      ? sorted_keys.map((key) => data[key])
+      ? sorted_keys.map((key) => data[key][0])
       : [];
   
-  const get_sorted_values_si = (data?: Record<string, number[][]>): number[][] =>
+  const get_sorted_values_si = (data?: Record<string, number[]>): number[][] =>
     data && typeof data === "object"
       ? sorted_keys.map((key) => data[key] as number[])
       : [];
@@ -137,7 +138,7 @@ export function splitStEntry(entry: Record<string, Record<string,number>>) {
   ] as const;
 }
 
-export function findLTMissingTimes(latestEntryLT: Record<string, number>, latestEntryST: Record<string, []>) {
+export function findLTMissingTimes(latestEntryLT: LtDataEntry, latestEntryST: StDataEntry) {
   if (!latestEntryLT?.id || !latestEntryST?.id) {
     return []; // Return empty array if either entry is missing an id
   }
@@ -159,7 +160,7 @@ export function findLTMissingTimes(latestEntryLT: Record<string, number>, latest
   return missingTimes;
 }
 
-export function filterShortTermData(stData: Record<string, Record<string,[]>>[], ltData: Record<string, []>[]) {
+export function filterShortTermData(stData: StDataEntry[], ltData: LtDataEntry[]) {
   if (!Array.isArray(stData) || !Array.isArray(ltData)) {
     return 0;
   }
@@ -177,7 +178,7 @@ export function filterShortTermData(stData: Record<string, Record<string,[]>>[],
   return stData.filter(entry => new Date(entry.id) >= thresholdTime);
 }
 
-export function splitAndSortSTData(stData: Record<string, Record<string,[]>>[]) {
+export function splitAndSortSTData(stData: StDataEntry) {
   if (!Array.isArray(stData)) {
     return [[], [], [], [], [], [], []] as const;
   }
@@ -218,7 +219,7 @@ export function splitAndSortSTData(stData: Record<string, Record<string,[]>>[]) 
  * @param obj The dictionary with date-string keys.
  * @returns The value corresponding to the earliest key, or NaN if invalid.
  */
-function getEarliestValue(obj: Record<string, Record<string,[]>> | undefined): number {
+function getEarliestValue(obj: Record<string, string> | undefined): number {
   if (!obj || typeof obj !== "object") {
     return NaN;
   }

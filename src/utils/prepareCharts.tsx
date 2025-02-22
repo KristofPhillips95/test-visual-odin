@@ -121,7 +121,7 @@ export function CombinedBarLineForecastAndHistChart_2({
 }: {
   title: string;
   x_labels: string[];
-  x_labels_fc: string[];
+  x_labels_fc: string[] | Date[];
   lineData: number[];
   lineDataFc: number[];
   barData: number[];

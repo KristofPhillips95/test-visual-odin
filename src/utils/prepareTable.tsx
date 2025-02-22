@@ -1,10 +1,11 @@
+import { LtDataEntry } from "@/types/dataTypes";
 import React from "react";
 
 interface BatteryProps {
   level: number;
 }
 
-function findRevenue(json: Record<string, number>, x: number) {
+function findRevenue(json: LtDataEntry[], x: number) {
   const lastEntries = sortEntriesAndReturnXlatest(json,x)
   const dischargeRevenue =
   lastEntries
@@ -20,25 +21,24 @@ function findCost(json: Record<string, number>[], x: number) {
     .reduce((acc, entry) => acc + entry.price * entry.net_discharge, 0)
   return Math.round(chargeCost)
 }
-function sortEntriesAndReturnXlatest(json: Record<string, number>[], x: number){
-  if (!json || typeof json !== "object") {
-    return [0, 0]; // Return zeros to prevent errors
+function sortEntriesAndReturnXlatest(json: LtDataEntry[], x: number) {
+  if (!Array.isArray(json)) {
+    return []; // Return an empty array instead of `[0, 0]`
   }
 
-  const sortedEntries = Object.entries(json)
-    .map(([, value]) => ({
+  const sortedEntries = json
+    .map(value => ({
       id: value?.id ? new Date(value.id) : new Date(0),
-      price: parseFloat(value?.Imb_price) || NaN,
-      net_discharge: parseFloat(value?.fw_net_discharge) || NaN,
-      SI: parseFloat(value?.SI) || NaN,
+      price: value?.Imb_price ?? NaN,
+      net_discharge: value?.fw_net_discharge ?? NaN,
+      SI: value?.SI ?? NaN,
     }))
     .sort((a, b) => a.id.getTime() - b.id.getTime());
 
-  const lastXElements = (arr: [], x: number) => arr.slice(-x);
-  const lastEntries = lastXElements(sortedEntries, x);
-  return lastEntries
-} 
-function findNBCycles(json: Record<string, number>, x: number, PERatio = 1 / 2){
+  return sortedEntries.slice(-x); // Directly return the last `x` elements
+}
+
+function findNBCycles(json: LtDataEntry[], x: number, PERatio = 1 / 2){
   const lastEntries = sortEntriesAndReturnXlatest(json,x)
   const nb_cycles =
   (lastEntries.filter((entry) => entry.net_discharge > 0.1).length +
@@ -47,7 +47,7 @@ function findNBCycles(json: Record<string, number>, x: number, PERatio = 1 / 2){
   PERatio;
   return nb_cycles.toFixed(2)
 }
-function findAvgSpread(json: Record<string, number>, x: number) {
+function findAvgSpread(json: LtDataEntry[], x: number) {
   const lastEntries = sortEntriesAndReturnXlatest(json,x)
 
   const averagedischargeprice =

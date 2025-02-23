@@ -77,7 +77,7 @@ export function Battery({
   decision: string;
   lt_data: LtDataEntry[];
 }) {
-  // console.log(currentQH);
+  console.log(level);
   const levelPercentage = level * 50;
   const getColor = (levelPercentage: number) => {
     if (levelPercentage > 50) return "rgba(103, 190, 91, 0.75)";

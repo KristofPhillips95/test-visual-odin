@@ -151,6 +151,33 @@ export function CombinedBarLineForecastAndHistChart_2({
     Math.abs(Math.max(...lineDataFc, 0)),
     );
 
+    const roundUpDynamic = (value) => {
+      if (value === 0) return 0; // Edge case: if value is 0, no rounding needed
+    
+      const magnitude = Math.pow(10, Math.floor(Math.log10(value))); // Get the power of 10
+      const factor = value / magnitude; // Normalize value to a 1-10 range
+    
+      let rounded;
+      if (factor <= 2) {
+        rounded = 2 * magnitude;
+      } else if (factor <= 4) {
+        rounded = 4 * magnitude;
+      }
+      else if (factor <= 6) {
+        rounded = 6 * magnitude;
+      } 
+      else if (factor <= 8) {
+        rounded = 8 * magnitude;
+      } 
+      else {
+        rounded = 10 * magnitude;
+      }
+    
+      return rounded;
+    };
+    
+    const maxPrice = roundUpDynamic(maxAbsValue_price);
+    const maxSi = roundUpDynamic(maxAbsValue_si);
 
   
     const datasetsHist: CustomChartDataset<"bar" | "line">[] = [
@@ -203,16 +230,16 @@ export function CombinedBarLineForecastAndHistChart_2({
         type: "linear",
         position: "left",
         title: { display: true, text: price_label },
-        suggestedMin: -maxAbsValue_price,
-        suggestedMax: maxAbsValue_price,
+        min: -maxPrice,
+        max: maxPrice,
       },
       y2: {
         stacked: false,
         type: "linear",
         position: "right",
         title: { display: true, text: si_label },
-        suggestedMin: -maxAbsValue_si,
-        suggestedMax: maxAbsValue_si,
+        min: -maxSi,
+        max: maxSi,
         grid: { drawOnChartArea: false },
       },
     },
@@ -295,20 +322,6 @@ export function CombinedBarLineForecastAndHistChartOperational({
   );
   const formattedLabels = formatTimeLabels(cleanedLabels);
 
-  // Calculate axis ranges
-  const maxAbsValue_si = Math.max(
-    Math.abs(Math.min(...barData, 0)),
-    Math.abs(Math.max(...barData, 0)),
-    Math.abs(Math.min(...shadedData1.flat(), 0)),
-    Math.abs(Math.max(...shadedData1.flat(), 0))
-  );
-  const maxAbsValue_price = Math.max(
-    Math.abs(Math.min(...lineData, 0)),
-    Math.abs(Math.max(...lineData, 0)),
-    Math.abs(Math.min(...lineDataFc, 0)),
-    Math.abs(Math.max(...lineDataFc, 0)),
-    );
-
   const datasetsHist = [
     {
       type: "line",
@@ -359,16 +372,16 @@ export function CombinedBarLineForecastAndHistChartOperational({
         type: "linear",
         position: "left",
         title: { display: true, text: price_label },
-        suggestedMin: -maxAbsValue_price,
-        suggestedMax: maxAbsValue_price,
+        suggestedMin: -2.5,
+        suggestedMax: 2.5,
       },
       y2: {
         stacked: false,
         type: "linear",
         position: "right",
         title: { display: true, text: si_label },
-        suggestedMin: -maxAbsValue_si,
-        suggestedMax: maxAbsValue_si,
+        suggestedMin: -0.25,
+        suggestedMax: 0.25,
         grid: { drawOnChartArea: false },
       },
     },

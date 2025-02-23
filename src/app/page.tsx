@@ -65,7 +65,7 @@ export default function Home() {
 
   const stNeeded = filterShortTermData(st_data,lt_data)
   const [labelsLTMissing, priceMissing,SIMissing,netDischargeMissing,socMissing] = splitAndSortSTData(stNeeded || []);
-  console.log(labelsLTMissing)
+  // console.log(labelsLTMissing)
 
   const decision = net_dc_fc[0] > 0.01 ? "Discharge" : net_dc_fc[0] < -0.01 ? "Charge" : "Wait";
   const battery_level  = soc_fc?.[0] ?? 0;
@@ -104,10 +104,10 @@ export default function Home() {
               title={"Operational Decisions"}
               x_labels={[...labelsLT,...labelsLTMissing]}
               x_labels_fc={labels_fc}
-              barData={[...netDischarge,...netDischargeMissing]}
-              lineData={[...soc,...socMissing]}
-              lineDataFc={soc_fc}
-              shadedData1={net_dc_fc}
+              barData={[...netDischarge,...netDischargeMissing,...net_dc_fc.slice(0,1)]}
+              lineData={[...soc,...socMissing,...soc_fc.slice(0,1)]}
+              lineDataFc={soc_fc.slice(1)}
+              shadedData1={net_dc_fc.slice(1)}
               price_label="SOC (MWh)"
               si_label="Net Discharge (MW)"
               soc_color="rgb(19, 172, 27)"

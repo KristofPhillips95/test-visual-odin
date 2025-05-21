@@ -278,6 +278,7 @@ export function CombinedBarLineForecastAndHistChart_2({
         }
       },
     },
+    devicePixelRatio: 2
   };
 
   return (
@@ -389,6 +390,7 @@ export function CombinedBarLineForecastAndHistChartOperational({
       legend: {
       },
     },
+    devicePixelRatio: 2
   };
 
   return (

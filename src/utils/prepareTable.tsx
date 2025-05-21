@@ -3,48 +3,52 @@ import React from "react";
 
 interface BatteryProps {
   level: number;
-}
-
-function findRevenue(json: LtDataEntry[], x: number) {
-  const lastEntries = sortEntriesAndReturnXlatest(json, x);
-  const dischargeRevenue = lastEntries
-    .filter((entry) => entry.net_discharge > 0.1)
-    .reduce((acc, entry) => acc + entry.price * entry.net_discharge, 0);
-  return Math.round(dischargeRevenue);
-}
-
-function findCost(json: LtDataEntry[], x: number) {
-  const lastEntries = sortEntriesAndReturnXlatest(json, x);
-  const chargeCost = lastEntries
-    .filter((entry) => entry.net_discharge < -0.1)
-    .reduce((acc, entry) => acc + entry.price * entry.net_discharge, 0);
-  return Math.round(chargeCost); // Cost is negative
-}
-
-function findProfit(json: LtDataEntry[], x: number) {
-  return findRevenue(json, x) + findCost(json, x); // Cost is negative
+  currentQH: string;
+  priceForecast: number;
+  decision: string;
+  lt_data: LtDataEntry[];
 }
 
 function sortEntriesAndReturnXlatest(json: LtDataEntry[], x: number) {
   if (!Array.isArray(json)) return [];
 
-  const sortedEntries = json
+  return json
     .map((value) => ({
       id: value?.id ? new Date(value.id) : new Date(0),
       price: value?.Imb_price ?? NaN,
       net_discharge: value?.fw_net_discharge ?? NaN,
-      SI: value?.SI ?? NaN,
     }))
-    .sort((a, b) => a.id.getTime() - b.id.getTime());
+    .sort((a, b) => a.id.getTime() - b.id.getTime())
+    .slice(-x);
+}
 
-  return sortedEntries.slice(-x);
+function findRevenue(json: LtDataEntry[], x: number) {
+  const data = sortEntriesAndReturnXlatest(json, x);
+  return Math.round(
+    data
+      .filter((entry) => entry.net_discharge > 0.1)
+      .reduce((acc, entry) => acc + entry.price * entry.net_discharge, 0)
+  );
+}
+
+function findCost(json: LtDataEntry[], x: number) {
+  const data = sortEntriesAndReturnXlatest(json, x);
+  return Math.round(
+    data
+      .filter((entry) => entry.net_discharge < -0.1)
+      .reduce((acc, entry) => acc + entry.price * entry.net_discharge, 0)
+  );
+}
+
+function findProfit(json: LtDataEntry[], x: number) {
+  return findRevenue(json, x) + findCost(json, x);
 }
 
 function findNBCycles(json: LtDataEntry[], x: number, PERatio = 1 / 2) {
-  const lastEntries = sortEntriesAndReturnXlatest(json, x);
+  const data = sortEntriesAndReturnXlatest(json, x);
   const nb_cycles =
-    (lastEntries.filter((entry) => entry.net_discharge > 0.1).length +
-      lastEntries.filter((entry) => entry.net_discharge < -0.1).length) /
+    (data.filter((entry) => entry.net_discharge > 0.1).length +
+      data.filter((entry) => entry.net_discharge < -0.1).length) /
     (2 * 4) *
     PERatio;
   return nb_cycles.toFixed(2);
@@ -56,154 +60,182 @@ export function Battery({
   priceForecast,
   decision,
   lt_data,
-}: BatteryProps & {
-  currentQH: string;
-  priceForecast: number;
-  decision: string;
-  lt_data: LtDataEntry[];
-}) {
+}: BatteryProps) {
   const levelPercentage = level * 100;
-  const getColor = (levelPercentage: number) => {
-    if (levelPercentage > 50) return "rgba(103, 190, 91, 0.75)";
-    if (levelPercentage > 20) return "rgba(196, 123, 28, 0.75)";
-    return "rgba(255, 0, 0, 0.75)";
+
+  const getColorGradient = (percent: number) => {
+    if (percent > 50)
+      return "linear-gradient(to top, rgba(83,205,205, 1), rgba(83,205,205, 0.5))";
+    if (percent > 20)
+      return "linear-gradient(to top, rgba(255, 174, 0, 1), rgba(255, 174, 0, 0.5))";
+    return "linear-gradient(to top, rgba(255, 0, 0, 1), rgba(255, 0, 0, 0.5))";
   };
 
-  const lbs = [24 * 4, 7 * 24 * 4]; // 1 day, 1 week
+  const lbs = [6*4,24 * 4,]// 7 * 24 * 4];
   const lookbackData = [
     {
-      lookback: "1d",
+      lookback: "6h",
       profit: findProfit(lt_data, lbs[0]),
+      // profit: Math.round(lbs[0] * 8.3),
       nbCycles: findNBCycles(lt_data, lbs[0]),
+      // nbCycles: 1.25/4,
     },
     {
-      lookback: "1w",
+      lookback: "1d",
       profit: findProfit(lt_data, lbs[1]),
+      // profit: Math.round(lbs[1] * 9.),
       nbCycles: findNBCycles(lt_data, lbs[1]),
+      // nbCycles: 1.5,
+
     },
+    // {
+    //   lookback: "1w",
+    //   profit: findProfit(lt_data, lbs[1]),
+    //   nbCycles: findNBCycles(lt_data, lbs[1]),
+    // },
   ];
 
   return (
     <div style={{ position: "relative", display: "inline-block" }}>
+      {/* Battery Cap */}
+      <div
+        style={{
+          width: "80px",
+          height: "30px",
+          background: "black",
+          borderRadius: "10px",
+          position: "absolute",
+          top: "-25px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          boxShadow: "0 2px 6px rgba(0, 0, 0, 0.3)",
+          zIndex: 10,
+        }}
+      />
+
       {/* Battery Container */}
       <div
         style={{
           width: "300px",
           height: "450px",
-          border: "6px solid black",
+          border: "6px solid #222",
           borderRadius: "40px",
           position: "relative",
           overflow: "hidden",
-          backgroundColor: "#ddd",
+          backgroundColor: "#e4e4e4",
+          boxShadow: "0 8px 20px rgba(0,0,0,0.25)",
         }}
       >
         {/* Battery Fill */}
         <div
           style={{
-            width: "100%",
-            height: `${levelPercentage}%`,
-            backgroundColor: getColor(levelPercentage),
             position: "absolute",
             bottom: 0,
-            transition: "height 0.3s ease-in-out, background-color 0.3s ease-in-out",
+            width: "100%",
+            height: `${levelPercentage}%`,
+            background: getColorGradient(levelPercentage),
+            transition: "height 0.4s ease-in-out",
           }}
         />
 
-        {/* Battery Info Table */}
+        {/* Battery Info */}
         <div
           style={{
             position: "absolute",
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
-            backgroundColor: "rgba(255, 255, 255, 0.8)",
-            padding: "10px",
-            borderRadius: "20px",
+            backgroundColor: "rgba(255,255,255,0.85)",
+            borderRadius: "18px",
+            padding: "16px",
+            width: "80%",
+            boxShadow: "inset 0 0 10px rgba(0,0,0,0.1)",
             textAlign: "center",
-            width: "75%",
+          }}
+        >
+<table style={{ width: "100%", borderCollapse: "collapse" }}>
+  <tbody>
+    <tr>
+      <td colSpan={2}>
+        <div
+          style={{
+            backgroundColor: "#f3f3f3",
+            borderRadius: "10px",
+            padding: "8px",
+            marginBottom: "12px",
           }}
         >
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                <th style={cellStyleSmall}></th>
+                {lookbackData.map(({ lookback }) => (
+                  <th style={cellStyleSmall} key={lookback}>
+                    {lookback}
+                  </th>
+                ))}
+              </tr>
+            </thead>
             <tbody>
               <tr>
-                <td style={cellStyle}>Current quarter</td>
-                <td style={cellStyle}>{currentQH.toLocaleString()}</td>
+                <td style={cellStyleSmallStrong}>Profit (€)</td>
+                {lookbackData.map(({ lookback, profit }) => (
+                  <td style={cellStyleSmallStrong} key={lookback}>
+                    {profit}
+                  </td>
+                ))}
               </tr>
               <tr>
-                <td style={cellStyle}>Price forecast</td>
-                <td style={cellStyle}>{priceForecast} (€/MWh)</td>
-              </tr>
-              <tr>
-                <td style={cellStyle}>Decision</td>
-                <td style={cellStyle}>{decision}</td>
-              </tr>
-              <tr>
-                <td style={cellStyle} colSpan={2}>
-                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                    <thead>
-                      <tr>
-                        <th style={cellStyleSmall}></th>
-                        {lookbackData.map(({ lookback }) => (
-                          <th style={cellStyleSmall} key={lookback}>
-                            {lookback}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td style={cellStyleSmall}>Profit (€)</td>
-                        {lookbackData.map(({ lookback, profit }) => (
-                          <td style={cellStyleSmall} key={lookback}>
-                            {profit}
-                          </td>
-                        ))}
-                      </tr>
-                      <tr>
-                        <td style={cellStyleSmall}># Cycles</td>
-                        {lookbackData.map(({ lookback, nbCycles }) => (
-                          <td style={cellStyleSmall} key={lookback}>
-                            {nbCycles}
-                          </td>
-                        ))}
-                      </tr>
-                    </tbody>
-                  </table>
-                </td>
+                <td style={cellStyleSmallStrong}>Cycles</td>
+                {lookbackData.map(({ lookback, nbCycles }) => (
+                  <td style={cellStyleSmallStrong} key={lookback}>
+                    {nbCycles}
+                  </td>
+                ))}
               </tr>
             </tbody>
           </table>
         </div>
-      </div>
+      </td>
+    </tr>
+    <tr>
+      <td style={cellStyleSmall}>Current quarter</td>
+      <td style={cellStyleSmall}>{currentQH}</td>
+    </tr>
+    <tr>
+      <td style={cellStyleSmall}>Price forecast</td>
+      <td style={cellStyleSmall}>{priceForecast} €/MWh</td>
+    </tr>
+    <tr>
+      <td style={cellStyleSmall}>Decision</td>
+      <td style={cellStyleSmall}>{decision}</td>
+    </tr>
+  </tbody>
+</table>
 
-      {/* Battery Cap */}
-      <div
-        style={{
-          width: "80px",
-          height: "40px",
-          background: "black",
-          position: "absolute",
-          top: "-25px",
-          left: "50%",
-          transform: "translateX(-50%)",
-          borderRadius: "6px",
-        }}
-      />
+        </div>
+      </div>
     </div>
   );
 }
 
-// Table cell styling
+// Styling
 const cellStyle: React.CSSProperties = {
-  padding: "8px",
-  borderBottom: "1px solid #ccc",
+  padding: "6px",
   textAlign: "left",
-  fontWeight: "bold",
+  fontWeight: 600,
+  fontSize: "14px",
 };
 
 const cellStyleSmall: React.CSSProperties = {
-  padding: "4px",
-  border: "1px solid #ccc",
+  padding: "6px",
   textAlign: "center",
-  fontSize: "12px",
+  fontSize: "13px",
+  fontWeight: 500,
+};
+const cellStyleSmallStrong: React.CSSProperties = {
+  padding: "8px",
+  textAlign: "center",
+  fontSize: "15px",
+  fontWeight: 700,
 };

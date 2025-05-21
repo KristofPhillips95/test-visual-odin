@@ -68,7 +68,8 @@ export default function Home() {
   // console.log(labelsLTMissing)
 
   const decision = net_dc_fc[0] > 0.01 ? "Discharge" : net_dc_fc[0] < -0.01 ? "Charge" : "Wait";
-  const battery_level  = soc_fc?.[0] ?? 0;
+  const battery_level  = (soc_fc?.[0] ?? 0)/2;
+  // const battery_level = 0.7
   const currentQH = labels_fc?.[0] instanceof Date 
   ? labels_fc[0].toLocaleString("en-GB", { hour12: false })  // Adjust format as needed
   : labels_fc?.[0] ?? "N/A";
@@ -109,8 +110,8 @@ export default function Home() {
               lineDataFc={soc_fc.slice(1)}
               shadedData1={net_dc_fc.slice(1)}
               price_label="SOC (MWh)"
-              si_label="Net Discharge (MW)"
-              soc_color="rgb(19, 172, 27)"
+              si_label="Net Discharge (MWh)"
+              soc_color="rgb(83,205,205)"
               netDis_color="rgb(39, 20, 208)"
             />
           )}

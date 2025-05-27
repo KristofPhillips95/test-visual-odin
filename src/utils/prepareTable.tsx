@@ -76,17 +76,12 @@ export function Battery({
     {
       lookback: "6h",
       profit: findProfit(lt_data, lbs[0]),
-      // profit: Math.round(lbs[0] * 8.3),
       nbCycles: findNBCycles(lt_data, lbs[0]),
-      // nbCycles: 1.25/4,
     },
     {
       lookback: "1d",
       profit: findProfit(lt_data, lbs[1]),
-      // profit: Math.round(lbs[1] * 9.),
       nbCycles: findNBCycles(lt_data, lbs[1]),
-      // nbCycles: 1.5,
-
     },
     // {
     //   lookback: "1w",
@@ -200,7 +195,9 @@ export function Battery({
     </tr>
     <tr>
       <td style={cellStyleSmall}>Current quarter</td>
-      <td style={cellStyleSmall}>{currentQH}</td>
+      {/* <td style={cellStyleSmall}>{currentQH}</td> */}
+      <td style={cellStyleSmall}>21/05/2025, 15:15</td>
+
     </tr>
     <tr>
       <td style={cellStyleSmall}>Price forecast</td>

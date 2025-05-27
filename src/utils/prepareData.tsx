@@ -17,8 +17,12 @@ export function splitAndSortLTSData(json: LtDataEntry[]): [string[], number[], n
     .sort((a, b) => a.id.getTime() - b.id.getTime());
 
   const lastXElements = (arr: typeof sortedEntries, x: number) => arr.slice(-x);
+  // const elementsFromTo = (arr: typeof sortedEntries, x: number,y: number) => arr.slice(-x,-y);
   const x = 26;
   const lastEntries = lastXElements(sortedEntries, x);
+  // const start_offset = 53;
+  // const lastEntries = elementsFromTo(sortedEntries, start_offset,start_offset-24);
+
 
   const labels = lastEntries.map((entry) => entry.id.toISOString());
   const price = lastEntries.map((entry) => entry.price);
@@ -29,6 +33,30 @@ export function splitAndSortLTSData(json: LtDataEntry[]): [string[], number[], n
   const soc = lastEntries.map((entry) => entry.soc);
 
   return [labels, price, SI, net_discharge, soc, charge, discharge];
+}
+
+export function findNthLatestEntry(json: StDataEntry[], index: number) {
+  if (!Array.isArray(json) || json.length === 0) {
+    return null; // consistent and safe
+  }
+
+  const getMinLookahead = (entry: StDataEntry) => {
+    const timestamps = entry.lookahead_timesteps.map(t => new Date(t).getTime());
+    return Math.min(...timestamps);
+  };
+
+  const sortedEntries = json
+    .map((entry) => ({
+      entry,
+      minLookahead: getMinLookahead(entry),
+    }))
+    .sort((a, b) => b.minLookahead - a.minLookahead); // Descending order
+
+  if (index < 0 || index >= sortedEntries.length) {
+    return null; // Index out of bounds
+  }
+
+  return sortedEntries[index].entry;
 }
 
 
@@ -191,6 +219,18 @@ export function filterShortTermData(stData: StDataEntry[], ltData: LtDataEntry[]
 
   // Filter short-term data for ids greater than or equal to the threshold time
   return stData.filter(entry => new Date(entry.id) >= thresholdTime);
+}
+
+export function filterShortTermDataOnIndex(stData: StDataEntry[], from: number, to: number) {
+  if (!Array.isArray(stData)) {
+    return [];
+  }
+
+  // Sort entries by time (oldest first)
+  const sorted = stData.slice().sort((a, b) => new Date(a.id).getTime() - new Date(b.id).getTime());
+
+  // Slice from index `from` to `to` (non-inclusive)
+  return sorted.slice(from, to);
 }
 
 export function splitAndSortSTData(stData: StDataEntry[]) {

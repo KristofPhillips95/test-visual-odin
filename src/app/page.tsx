@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { fetchAsJson } from "../utils/fetchData";
 import "chart.js/auto";
 import {CombinedBarLineForecastAndHistChart_2,CombinedBarLineForecastAndHistChartOperational} from "../utils/prepareCharts";
-import {splitAndSortLTSData,findLatestEntryst,splitStEntry,filterShortTermData,splitAndSortSTData} from "../utils/prepareData";
+import {splitAndSortLTSData,findLatestEntryst,splitStEntry,filterShortTermData,splitAndSortSTData, findNthLatestEntry, filterShortTermDataOnIndex} from "../utils/prepareData";
 import {Battery} from "../utils/prepareTable";
 import {StDataEntry,LtDataEntry} from "../types/dataTypes"
 
@@ -60,13 +60,36 @@ export default function Home() {
   const [labelsLT, price,SI,netDischarge,soc] = splitAndSortLTSData(lt_data || []);
   
   const latestEntryST = findLatestEntryst(st_data || [] )
+  // const latestEntryST = findNthLatestEntry(st_data || [],0)
   const [labels_fc,price_fc,si_fc,net_dc_fc,soc_fc,quantiles] = splitStEntry(latestEntryST)
+  
+  // const extendedLabelsLT_missing = [];
+  // const numberOfQuarterHoursToAddForMissing = 3;
 
+  // if (labelsLT.length > 0) {
+  //   const lastTimestamp = new Date(labelsLT[labelsLT.length - 1]);
+  //   for (let i = 1; i <= numberOfQuarterHoursToAddForMissing; i++) {
+  //     const nextTimestamp = new Date(lastTimestamp.getTime() + i * 15 * 60 * 1000);
+  //     extendedLabelsLT_missing.push(nextTimestamp);
+  //   }
+  // }
+
+  // const extendedLabels_fct = [];
+  // const numberOfQuarterHoursToAddForfc = 20;
+
+  // if (extendedLabelsLT_missing.length > 0) {
+  //   const lastTimestamp = new Date(extendedLabelsLT_missing[extendedLabelsLT_missing.length - 1]);
+  //   for (let i = 1; i <= numberOfQuarterHoursToAddForfc; i++) {
+  //     const nextTimestamp = new Date(lastTimestamp.getTime() + i * 15 * 60 * 1000);
+  //     extendedLabels_fct.push(nextTimestamp);
+  //   }
+  // }
 
   const stNeeded = filterShortTermData(st_data,lt_data)
+
+  // const stNeeded = filterShortTermDataOnIndex(st_data,23,20)
   const [labelsLTMissing, priceMissing,SIMissing,netDischargeMissing,socMissing] = splitAndSortSTData(stNeeded || []);
   // console.log(labelsLTMissing)
-
   const decision = net_dc_fc[0] > 0.01 ? "Discharge" : net_dc_fc[0] < -0.01 ? "Charge" : "Wait";
   const battery_level  = (soc_fc?.[0] ?? 0)/2;
   // const battery_level = 0.7
@@ -86,6 +109,8 @@ export default function Home() {
           {st_data && (
             <CombinedBarLineForecastAndHistChart_2
               title={"Price and SI"}
+              // x_labels={[...labelsLT,...extendedLabelsLT_missing]}
+              // x_labels_fc={extendedLabels_fct}
               x_labels={[...labelsLT,...labelsLTMissing]}
               x_labels_fc={labels_fc}
               barData={[...SI,...SIMissing]}
@@ -93,8 +118,8 @@ export default function Home() {
               lineDataFc={price_fc}
               shadedData1={si_fc}
               quantiles={quantiles}
-              price_label="Imbalance price (Euro/MWh)"
-              si_label="System Imbalance (MW)"
+              price_label="Imbalance price (€/MWh)"
+              si_label="SI (MW)"
               price_color="rgb(75,192,192)"
               si_color="rgb(208, 105, 20)"
             />
@@ -103,6 +128,8 @@ export default function Home() {
           {st_data && (
             <CombinedBarLineForecastAndHistChartOperational
               title={"Operational Decisions"}
+              // x_labels={[...labelsLT,...extendedLabelsLT_missing]}
+              // x_labels_fc={extendedLabels_fct}
               x_labels={[...labelsLT,...labelsLTMissing]}
               x_labels_fc={labels_fc}
               barData={[...netDischarge,...netDischargeMissing,...net_dc_fc.slice(0,1)]}

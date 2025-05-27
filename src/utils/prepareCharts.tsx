@@ -136,20 +136,23 @@ export function CombinedBarLineForecastAndHistChart_2({
     label instanceof Date ? label.toISOString() : label
   );
   const formattedLabels = formatTimeLabels(cleanedLabels);
-
+  // Helper to filter out NaNs before computing min/max
+  const filterNaN = (arr: number[]) => arr.filter((v) => !isNaN(v));
   // Calculate axis ranges
   const maxAbsValue_si = Math.max(
-    Math.abs(Math.min(...barData, 0)),
-    Math.abs(Math.max(...barData, 0)),
-    Math.abs(Math.min(...shadedData1.flat(), 0)),
-    Math.abs(Math.max(...shadedData1.flat(), 0))
+    Math.abs(Math.min(...filterNaN(barData), 0)),
+    Math.abs(Math.max(...filterNaN(barData), 0)),
+    Math.abs(Math.min(...filterNaN(shadedData1.flat()), 0)),
+    Math.abs(Math.max(...filterNaN(shadedData1.flat()), 0))
   );
+
+
   const maxAbsValue_price = Math.max(
-    Math.abs(Math.min(...lineData, 0)),
-    Math.abs(Math.max(...lineData, 0)),
-    Math.abs(Math.min(...lineDataFc, 0)),
-    Math.abs(Math.max(...lineDataFc, 0)),
-    );
+    Math.abs(Math.min(...filterNaN(lineData), 0)),
+    Math.abs(Math.max(...filterNaN(lineData), 0)),
+    Math.abs(Math.min(...filterNaN(lineDataFc), 0)),
+    Math.abs(Math.max(...filterNaN(lineDataFc), 0)),
+  );
 
     const roundUpDynamic = (value) => {
       if (value === 0) return 0; // Edge case: if value is 0, no rounding needed
@@ -175,8 +178,9 @@ export function CombinedBarLineForecastAndHistChart_2({
     
       return rounded;
     };
-    
+    console.log("maxAbsValue_price", maxAbsValue_price);
     const maxPrice = roundUpDynamic(maxAbsValue_price);
+    console.log("maxPrice", maxPrice);
     const maxSi = roundUpDynamic(maxAbsValue_si);
 
   

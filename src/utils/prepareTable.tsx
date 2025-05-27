@@ -195,8 +195,8 @@ export function Battery({
     </tr>
     <tr>
       <td style={cellStyleSmall}>Current quarter</td>
-      {/* <td style={cellStyleSmall}>{currentQH}</td> */}
-      <td style={cellStyleSmall}>21/05/2025, 15:15</td>
+      <td style={cellStyleSmall}>{currentQH}</td>
+      {/* <td style={cellStyleSmall}>21/05/2025, 15:15</td> */}
 
     </tr>
     <tr>
@@ -217,12 +217,12 @@ export function Battery({
 }
 
 // Styling
-const cellStyle: React.CSSProperties = {
-  padding: "6px",
-  textAlign: "left",
-  fontWeight: 600,
-  fontSize: "14px",
-};
+// const cellStyle: React.CSSProperties = {
+//   padding: "6px",
+//   textAlign: "left",
+//   fontWeight: 600,
+//   fontSize: "14px",
+// };
 
 const cellStyleSmall: React.CSSProperties = {
   padding: "6px",

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { fetchAsJson } from "../utils/fetchData";
 import "chart.js/auto";
 import {CombinedBarLineForecastAndHistChart_2,CombinedBarLineForecastAndHistChartOperational} from "../utils/prepareCharts";
-import {splitAndSortLTSData,findLatestEntryst,splitStEntry,filterShortTermData,splitAndSortSTData, findNthLatestEntry, filterShortTermDataOnIndex} from "../utils/prepareData";
+import {splitAndSortLTSData,findLatestEntryst,splitStEntry,filterShortTermData,splitAndSortSTData} from "../utils/prepareData";
 import {Battery} from "../utils/prepareTable";
 import {StDataEntry,LtDataEntry} from "../types/dataTypes"
 

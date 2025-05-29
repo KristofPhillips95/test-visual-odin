@@ -107,6 +107,20 @@ export function Battery({
           zIndex: 10,
         }}
       />
+      {/* Gridual Logo */}
+      <img
+        src="/logo_name_black_combi_edge.png"
+        alt="Logo"
+        style={{
+          position: "absolute",
+          top: "15px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          maxWidth: "280px",
+          height: "auto",
+          zIndex: 15,
+        }}
+      />
 
       {/* Battery Container */}
       <div
